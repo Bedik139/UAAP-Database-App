@@ -35,6 +35,8 @@ public class SeatAndTicketManagerPanel extends JPanel {
     private JTextField priceField;
     private JComboBox<Ticket> ticketCombo;
     private JComboBox<Match> matchCombo;
+    private JComboBox<String> statusCombo;
+    private JTextField refundDatetimeField;
 
     private JButton addButton;
     private JButton updateButton;
@@ -96,12 +98,28 @@ public class SeatAndTicketManagerPanel extends JPanel {
         });
         matchCombo.setToolTipText("Optional specific match. Leave as 'No linked match' to set NULL.");
 
+        statusCombo = new JComboBox<>(new String[]{"Sold", "Refunded"});
+        statusCombo.addActionListener(e -> toggleRefundField());
+
+        refundDatetimeField = new JTextField();
+        refundDatetimeField.setToolTipText("Refund timestamp (YYYY-MM-DD HH:MM:SS). Leave blank to auto-fill when refunding.");
+        refundDatetimeField.setEnabled(false);
+        toggleRefundField();
+
         add(buildFormPanel(), BorderLayout.NORTH);
+    }
+
+    private void toggleRefundField() {
+        boolean refunded = "Refunded".equalsIgnoreCase((String) statusCombo.getSelectedItem());
+        refundDatetimeField.setEnabled(refunded);
+        if (!refunded) {
+            refundDatetimeField.setText("");
+        }
     }
 
     private void initTable() {
         tableModel = new DefaultTableModel(
-                new Object[]{"Record ID", "Seat", "Event", "Customer", "Sold At", "Price", "Ticket", "Match"}, 0
+                new Object[]{"Record ID", "Seat", "Event", "Customer", "Sold At", "Price", "Ticket", "Match", "Status", "Refunded At"}, 0
         ) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -251,7 +269,9 @@ public class SeatAndTicketManagerPanel extends JPanel {
                         record.getSaleDatetime(),
                         record.getPriceSold(),
                         record.getTicketLabel(),
-                        record.getMatchLabel() != null ? record.getMatchLabel() : "None"
+                        record.getMatchLabel() != null ? record.getMatchLabel() : "None",
+                        record.getSaleStatus(),
+                        record.getRefundDatetime() != null ? record.getRefundDatetime() : ""
                 });
             }
         } catch (SQLException ex) {
@@ -332,6 +352,14 @@ public class SeatAndTicketManagerPanel extends JPanel {
         Timestamp saleTime = parseTimestamp(saleDatetimeField);
         BigDecimal price = parsePrice(priceField);
         Integer matchId = (match != null) ? match.getMatchId() : null;
+        String saleStatus = (String) statusCombo.getSelectedItem();
+        Timestamp refundTime = parseRefundTimestamp(refundDatetimeField);
+        if ("Refunded".equalsIgnoreCase(saleStatus) && refundTime == null) {
+            refundTime = Timestamp.valueOf(LocalDateTime.now());
+        }
+        if (!"Refunded".equalsIgnoreCase(saleStatus)) {
+            refundTime = null;
+        }
 
         SeatAndTicket record = new SeatAndTicket(
                 seat.getSeatId(),
@@ -340,8 +368,10 @@ public class SeatAndTicketManagerPanel extends JPanel {
                 saleTime,
                 price,
                 ticket.getTicketId(),
-                matchId
+                matchId,
+                saleStatus
         );
+        record.setRefundDatetime(refundTime);
 
         if (includeId) {
             record.setRecordId(Integer.parseInt(recordIdField.getText().trim()));
@@ -354,6 +384,14 @@ public class SeatAndTicketManagerPanel extends JPanel {
         String text = field.getText().trim();
         if (text.isEmpty()) {
             return Timestamp.valueOf(LocalDateTime.now());
+        }
+        return Timestamp.valueOf(text.replace('T', ' '));
+    }
+
+    private Timestamp parseRefundTimestamp(JTextField field) {
+        String text = field.getText().trim();
+        if (text.isEmpty()) {
+            return null;
         }
         return Timestamp.valueOf(text.replace('T', ' '));
     }
@@ -383,6 +421,13 @@ public class SeatAndTicketManagerPanel extends JPanel {
         priceField.setText(record.getPriceSold().toPlainString());
         selectTicket(record.getTicketId());
         selectMatch(record.getMatchId());
+        statusCombo.setSelectedItem(record.getSaleStatus());
+        if (record.getRefundDatetime() != null) {
+            refundDatetimeField.setText(record.getRefundDatetime().toString());
+        } else {
+            refundDatetimeField.setText("");
+        }
+        toggleRefundField();
     }
 
     private void selectSeat(int seatId) {
@@ -438,6 +483,9 @@ public class SeatAndTicketManagerPanel extends JPanel {
         saleDatetimeField.setText("");
         priceField.setText("");
         matchCombo.setSelectedIndex(0);
+        statusCombo.setSelectedItem("Sold");
+        refundDatetimeField.setText("");
+        toggleRefundField();
         table.clearSelection();
     }
 
@@ -453,6 +501,8 @@ public class SeatAndTicketManagerPanel extends JPanel {
         addFormField(panel, 2, 1, "Price Sold", priceField);
         addFormField(panel, 3, 0, "Ticket", ticketCombo);
         addFormField(panel, 3, 1, "Match (optional)", matchCombo);
+        addFormField(panel, 4, 0, "Sale Status", statusCombo);
+        addFormField(panel, 4, 1, "Refund Timestamp", refundDatetimeField);
 
         return panel;
     }

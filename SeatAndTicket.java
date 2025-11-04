@@ -11,6 +11,9 @@ public class SeatAndTicket {
     private BigDecimal priceSold;
     private int ticketId;
     private Integer matchId;
+    private String saleStatus;
+    private Timestamp refundDatetime;
+
     private String seatLabel;
     private String eventName;
     private String customerName;
@@ -27,6 +30,8 @@ public class SeatAndTicket {
                          BigDecimal priceSold,
                          int ticketId,
                          Integer matchId,
+                         String saleStatus,
+                         Timestamp refundDatetime,
                          String seatLabel,
                          String eventName,
                          String customerName,
@@ -40,6 +45,8 @@ public class SeatAndTicket {
         this.priceSold = priceSold;
         this.ticketId = ticketId;
         this.matchId = matchId;
+        this.saleStatus = saleStatus;
+        this.refundDatetime = refundDatetime;
         this.seatLabel = seatLabel;
         this.eventName = eventName;
         this.customerName = customerName;
@@ -53,9 +60,10 @@ public class SeatAndTicket {
                          Timestamp saleDatetime,
                          BigDecimal priceSold,
                          int ticketId,
-                         Integer matchId) {
+                         Integer matchId,
+                         String saleStatus) {
         this(0, seatId, eventId, customerId, saleDatetime, priceSold, ticketId, matchId,
-                null, null, null, null, null);
+                saleStatus, null, null, null, null, null, null);
     }
 
     public int getRecordId() {
@@ -122,6 +130,22 @@ public class SeatAndTicket {
         this.matchId = matchId;
     }
 
+    public String getSaleStatus() {
+        return saleStatus;
+    }
+
+    public void setSaleStatus(String saleStatus) {
+        this.saleStatus = saleStatus;
+    }
+
+    public Timestamp getRefundDatetime() {
+        return refundDatetime;
+    }
+
+    public void setRefundDatetime(Timestamp refundDatetime) {
+        this.refundDatetime = refundDatetime;
+    }
+
     public String getSeatLabel() {
         return seatLabel;
     }
@@ -160,5 +184,9 @@ public class SeatAndTicket {
 
     public void setMatchLabel(String matchLabel) {
         this.matchLabel = matchLabel;
+    }
+
+    public boolean isSold() {
+        return "Sold".equalsIgnoreCase(saleStatus);
     }
 }

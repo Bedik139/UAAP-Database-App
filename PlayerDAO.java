@@ -30,40 +30,33 @@ public class PlayerDAO {
     }
 
     public List<Player> getAllPlayers() throws SQLException {
-        List<Player> players = new ArrayList<>();
-
         String sql = "SELECT p.player_id, p.team_id, t.team_name, " +
                 "p.player_first_name, p.player_last_name, p.player_number, " +
                 "p.age, p.position, p.weight, p.height, p.individual_score " +
                 "FROM player p INNER JOIN team t ON p.team_id = t.team_id " +
                 "ORDER BY p.player_id";
-
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
+            return mapPlayers(rs);
+        }
+    }
 
-            while (rs.next()) {
-                int ageValue = rs.getInt("age");
-                Integer age = rs.wasNull() ? null : ageValue;
+    public List<Player> getPlayersByTeam(int teamId) throws SQLException {
+        String sql = "SELECT p.player_id, p.team_id, t.team_name, " +
+                "p.player_first_name, p.player_last_name, p.player_number, " +
+                "p.age, p.position, p.weight, p.height, p.individual_score " +
+                "FROM player p INNER JOIN team t ON p.team_id = t.team_id " +
+                "WHERE p.team_id = ? ORDER BY p.player_last_name, p.player_first_name";
 
-                Player player = new Player(
-                        rs.getInt("player_id"),
-                        rs.getInt("team_id"),
-                        rs.getString("team_name"),
-                        rs.getString("player_first_name"),
-                        rs.getString("player_last_name"),
-                        rs.getInt("player_number"),
-                        age,
-                        rs.getString("position"),
-                        rs.getBigDecimal("weight"),
-                        rs.getBigDecimal("height"),
-                        rs.getInt("individual_score")
-                );
-                players.add(player);
+        try (Connection conn = Database.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, teamId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return mapPlayers(rs);
             }
         }
-
-        return players;
     }
 
     public void updatePlayer(Player player) throws SQLException {
@@ -90,6 +83,30 @@ public class PlayerDAO {
             ps.setInt(1, playerId);
             ps.executeUpdate();
         }
+    }
+
+    private List<Player> mapPlayers(ResultSet rs) throws SQLException {
+        List<Player> players = new ArrayList<>();
+        while (rs.next()) {
+            int ageValue = rs.getInt("age");
+            Integer age = rs.wasNull() ? null : ageValue;
+
+            Player player = new Player(
+                    rs.getInt("player_id"),
+                    rs.getInt("team_id"),
+                    rs.getString("team_name"),
+                    rs.getString("player_first_name"),
+                    rs.getString("player_last_name"),
+                    rs.getInt("player_number"),
+                    age,
+                    rs.getString("position"),
+                    rs.getBigDecimal("weight"),
+                    rs.getBigDecimal("height"),
+                    rs.getInt("individual_score")
+            );
+            players.add(player);
+        }
+        return players;
     }
 
     private void bindPlayer(PreparedStatement ps, Player player) throws SQLException {

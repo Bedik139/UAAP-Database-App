@@ -7,77 +7,99 @@ import java.util.List;
 
 public class EventDAO {
 
-    // CREATE
-    public void insertEvent(Event ev) throws SQLException {
+    private static final String BASE_SELECT =
+            "SELECT event_id, event_name, sport, match_date, event_time_start, " +
+            "event_time_end, venue_address, event_status FROM event ";
+
+    public void insertEvent(Event event) throws SQLException {
         String sql = "INSERT INTO event " +
-                "(event_name, sport, match_date, event_time_start, event_time_end, venue_address) " +
-                "VALUES (?, ?, ?, ?, ?, ?)";
+                "(event_name, sport, match_date, event_time_start, event_time_end, venue_address, event_status) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            ps.setString(1, ev.getEventName());
-            ps.setString(2, ev.getSport());
-            ps.setDate(3, ev.getMatchDate());
-            ps.setTime(4, ev.getEventTimeStart());
-            ps.setTime(5, ev.getEventTimeEnd());
-            ps.setString(6, ev.getVenueAddress());
+            ps.setString(1, event.getEventName());
+            ps.setString(2, event.getSport());
+            ps.setDate(3, event.getMatchDate());
+            ps.setTime(4, event.getEventTimeStart());
+            ps.setTime(5, event.getEventTimeEnd());
+            ps.setString(6, event.getVenueAddress());
+            ps.setString(7, event.getEventStatus());
 
             ps.executeUpdate();
         }
     }
 
-    // READ (all rows)
     public List<Event> getAllEvents() throws SQLException {
-        List<Event> list = new ArrayList<>();
-
-        String sql = "SELECT event_id, event_name, sport, match_date, " +
-                "event_time_start, event_time_end, venue_address " +
-                "FROM event ORDER BY event_id";
+        List<Event> events = new ArrayList<>();
+        String sql = BASE_SELECT + "ORDER BY event_id";
 
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
-                Event ev = new Event();
-                ev.setEventId(rs.getInt("event_id"));
-                ev.setEventName(rs.getString("event_name"));
-                ev.setSport(rs.getString("sport"));
-                ev.setMatchDate(rs.getDate("match_date"));
-                ev.setEventTimeStart(rs.getTime("event_time_start"));
-                ev.setEventTimeEnd(rs.getTime("event_time_end"));
-                ev.setVenueAddress(rs.getString("venue_address"));
-                list.add(ev);
+                events.add(mapRow(rs));
             }
         }
 
-        return list;
+        return events;
     }
 
-    // UPDATE
-    public void updateEvent(Event ev) throws SQLException {
+    public Event getEventById(int eventId) throws SQLException {
+        String sql = BASE_SELECT + "WHERE event_id = ?";
+
+        try (Connection conn = Database.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, eventId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return mapRow(rs);
+                }
+            }
+        }
+
+        return null;
+    }
+
+    public void updateEvent(Event event) throws SQLException {
         String sql = "UPDATE event SET " +
-                "event_name = ?, sport = ?, match_date = ?, " +
-                "event_time_start = ?, event_time_end = ?, venue_address = ? " +
+                "event_name = ?, sport = ?, match_date = ?, event_time_start = ?, " +
+                "event_time_end = ?, venue_address = ?, event_status = ? " +
                 "WHERE event_id = ?";
 
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            ps.setString(1, ev.getEventName());
-            ps.setString(2, ev.getSport());
-            ps.setDate(3, ev.getMatchDate());
-            ps.setTime(4, ev.getEventTimeStart());
-            ps.setTime(5, ev.getEventTimeEnd());
-            ps.setString(6, ev.getVenueAddress());
-            ps.setInt(7, ev.getEventId());
+            ps.setString(1, event.getEventName());
+            ps.setString(2, event.getSport());
+            ps.setDate(3, event.getMatchDate());
+            ps.setTime(4, event.getEventTimeStart());
+            ps.setTime(5, event.getEventTimeEnd());
+            ps.setString(6, event.getVenueAddress());
+            ps.setString(7, event.getEventStatus());
+            ps.setInt(8, event.getEventId());
 
             ps.executeUpdate();
         }
     }
 
-    // DELETE
+    public void updateEventStatus(int eventId, String status) throws SQLException {
+        String sql = "UPDATE event SET event_status = ? WHERE event_id = ?";
+
+        try (Connection conn = Database.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, status);
+            ps.setInt(2, eventId);
+
+            ps.executeUpdate();
+        }
+    }
+
     public void deleteEvent(int eventId) throws SQLException {
         String sql = "DELETE FROM event WHERE event_id = ?";
 
@@ -87,5 +109,18 @@ public class EventDAO {
             ps.setInt(1, eventId);
             ps.executeUpdate();
         }
+    }
+
+    private Event mapRow(ResultSet rs) throws SQLException {
+        Event event = new Event();
+        event.setEventId(rs.getInt("event_id"));
+        event.setEventName(rs.getString("event_name"));
+        event.setSport(rs.getString("sport"));
+        event.setMatchDate(rs.getDate("match_date"));
+        event.setEventTimeStart(rs.getTime("event_time_start"));
+        event.setEventTimeEnd(rs.getTime("event_time_end"));
+        event.setVenueAddress(rs.getString("venue_address"));
+        event.setEventStatus(rs.getString("event_status"));
+        return event;
     }
 }

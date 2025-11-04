@@ -1,4 +1,15 @@
-import javax.swing.*;
+import javax.swing.BorderFactory;
+import javax.swing.ComboBoxModel;
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.JTextField;
+import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
@@ -8,19 +19,20 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.sql.Date;
-import java.sql.Time;
 import java.sql.SQLException;
-import java.util.ArrayList;
+import java.sql.Time;
 import java.util.List;
 
 public class MatchManagerPanel extends JPanel {
+
+    private static final String[] MATCH_TYPES = {"Elimination_Round", "Semifinals", "Finals"};
+    private static final String[] STATUS_OPTIONS = {"Scheduled", "Completed", "Cancelled", "Postponed"};
 
     private final MatchDAO matchDAO = new MatchDAO();
     private final EventDAO eventDAO = new EventDAO();
 
     private JTable table;
     private DefaultTableModel tableModel;
-    private List<Match> cachedMatches = new ArrayList<>();
 
     private JTextField idField;
     private JComboBox<Event> eventCombo;
@@ -28,6 +40,8 @@ public class MatchManagerPanel extends JPanel {
     private JTextField dateField;
     private JTextField startField;
     private JTextField endField;
+    private JComboBox<String> statusCombo;
+    private JTextField summaryField;
 
     private JButton addButton;
     private JButton updateButton;
@@ -47,48 +61,71 @@ public class MatchManagerPanel extends JPanel {
     private void initForm() {
         idField = new JTextField();
         idField.setEditable(false);
-        idField.setToolTipText("Auto-filled when selecting a match.");
 
         eventCombo = new JComboBox<>();
-        eventCombo.setToolTipText("Event that hosts this match.");
-
-        typeCombo = new JComboBox<>(new String[]{
-                "Elimination_Round",
-                "Semifinals",
-                "Finals"
-        });
-        typeCombo.setToolTipText("Competition stage of the match.");
-
+        typeCombo = new JComboBox<>(MATCH_TYPES);
         dateField = new JTextField();
-        dateField.setToolTipText("Format: YYYY-MM-DD");
-
         startField = new JTextField();
-        startField.setToolTipText("Format: HH:MM:SS");
-
         endField = new JTextField();
-        endField.setToolTipText("Format: HH:MM:SS");
+        statusCombo = new JComboBox<>(STATUS_OPTIONS);
+        statusCombo.setSelectedItem("Scheduled");
+        summaryField = new JTextField();
+        summaryField.setToolTipText("Optional score summary; auto-filled when match results are recorded.");
 
-        add(buildFormPanel(), BorderLayout.NORTH);
+        add(buildForm(), BorderLayout.NORTH);
+    }
+
+    private JPanel buildForm() {
+        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setBorder(BorderFactory.createTitledBorder("Match Details"));
+
+        addFormField(panel, 0, 0, "Match ID (auto)", idField);
+        addFormField(panel, 0, 1, "Event", eventCombo);
+        addFormField(panel, 1, 0, "Match Type", typeCombo);
+        addFormField(panel, 1, 1, "Status", statusCombo);
+        addFormField(panel, 2, 0, "Match Date", dateField);
+        addFormField(panel, 2, 1, "Start Time", startField);
+        addFormField(panel, 3, 0, "End Time", endField);
+        addFormField(panel, 3, 1, "Score Summary", summaryField);
+
+        return panel;
+    }
+
+    private void addFormField(JPanel panel, int row, int col, String label, java.awt.Component component) {
+        GridBagConstraints labelGbc = baseGbc(row, col * 2);
+        labelGbc.anchor = GridBagConstraints.EAST;
+        panel.add(new JLabel(label), labelGbc);
+
+        GridBagConstraints fieldGbc = baseGbc(row, col * 2 + 1);
+        fieldGbc.fill = GridBagConstraints.HORIZONTAL;
+        fieldGbc.weightx = 0.5;
+        panel.add(component, fieldGbc);
+    }
+
+    private GridBagConstraints baseGbc(int row, int col) {
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = col;
+        gbc.gridy = row;
+        gbc.insets = new Insets(6, 8, 6, 8);
+        return gbc;
     }
 
     private void initTable() {
         tableModel = new DefaultTableModel(
-                new Object[]{"Match ID", "Event", "Type", "Date", "Start", "End"}, 0
+                new Object[]{"Match ID", "Event", "Type", "Date", "Start", "End", "Status", "Score Summary"}, 0
         ) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
+            @Override public boolean isCellEditable(int row, int column) { return false; }
         };
 
         table = new JTable(tableModel);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             @Override public void valueChanged(ListSelectionEvent e) {
-                int row = table.getSelectedRow();
-                if (row >= 0 && row < cachedMatches.size()) {
-                    Match match = cachedMatches.get(row);
-                    populateForm(match);
+                if (!e.getValueIsAdjusting()) {
+                    int row = table.getSelectedRow();
+                    if (row >= 0) {
+                        populateFormFromTable(row);
+                    }
                 }
             }
         });
@@ -105,14 +142,6 @@ public class MatchManagerPanel extends JPanel {
         clearButton = new JButton("Clear Form");
         refreshButton = new JButton("Refresh");
 
-        panel.add(addButton);
-        panel.add(updateButton);
-        panel.add(deleteButton);
-        panel.add(clearButton);
-        panel.add(refreshButton);
-
-        add(panel, BorderLayout.SOUTH);
-
         addButton.addActionListener(e -> handleAdd());
         updateButton.addActionListener(e -> handleUpdate());
         deleteButton.addActionListener(e -> handleDelete());
@@ -121,50 +150,45 @@ public class MatchManagerPanel extends JPanel {
             reloadEvents();
             reloadTable();
         });
+
+        panel.add(addButton);
+        panel.add(updateButton);
+        panel.add(deleteButton);
+        panel.add(clearButton);
+        panel.add(refreshButton);
+
+        add(panel, BorderLayout.SOUTH);
     }
 
-    private void reloadEvents() {
-        try {
-            List<Event> events = eventDAO.getAllEvents();
-            DefaultComboBoxModel<Event> model = new DefaultComboBoxModel<>();
-            for (Event event : events) {
-                model.addElement(event);
-            }
-            eventCombo.setModel(model);
-            if (model.getSize() > 0) {
-                eventCombo.setSelectedIndex(0);
-            }
-        } catch (SQLException ex) {
-            showError("Error loading events:\n" + ex.getMessage());
-        }
+    private void populateFormFromTable(int row) {
+        idField.setText(String.valueOf(tableModel.getValueAt(row, 0)));
+        selectEventByLabel(String.valueOf(tableModel.getValueAt(row, 1)));
+        typeCombo.setSelectedItem(tableModel.getValueAt(row, 2));
+        dateField.setText(String.valueOf(tableModel.getValueAt(row, 3)));
+        startField.setText(String.valueOf(tableModel.getValueAt(row, 4)));
+        endField.setText(String.valueOf(tableModel.getValueAt(row, 5)));
+        statusCombo.setSelectedItem(tableModel.getValueAt(row, 6));
+        Object summary = tableModel.getValueAt(row, 7);
+        summaryField.setText(summary != null ? summary.toString() : "");
     }
 
-    private void reloadTable() {
-        tableModel.setRowCount(0);
-        cachedMatches.clear();
-
-        try {
-            cachedMatches = matchDAO.getAllMatches();
-            for (Match match : cachedMatches) {
-                tableModel.addRow(new Object[]{
-                        match.getMatchId(),
-                        match.getEventName(),
-                        match.getMatchType(),
-                        match.getMatchDate(),
-                        match.getMatchTimeStart(),
-                        match.getMatchTimeEnd()
-                });
+    private void selectEventByLabel(String label) {
+        ComboBoxModel<Event> model = eventCombo.getModel();
+        for (int i = 0; i < model.getSize(); i++) {
+            Event event = model.getElementAt(i);
+            if (label.equals(event.toString())) {
+                eventCombo.setSelectedIndex(i);
+                return;
             }
-        } catch (SQLException ex) {
-            showError("Error loading matches:\n" + ex.getMessage());
         }
+        eventCombo.setSelectedIndex(-1);
     }
 
     private void handleAdd() {
         try {
             Match match = formToMatch(false);
             matchDAO.insertMatch(match);
-            showInfo("Match saved.");
+            showInfo("Match added.");
             reloadTable();
             clearForm();
         } catch (Exception ex) {
@@ -183,7 +207,6 @@ public class MatchManagerPanel extends JPanel {
             matchDAO.updateMatch(match);
             showInfo("Match updated.");
             reloadTable();
-            clearForm();
         } catch (Exception ex) {
             showError("Unable to update match:\n" + ex.getMessage());
         }
@@ -235,80 +258,69 @@ public class MatchManagerPanel extends JPanel {
         Time start = Time.valueOf(startText);
         Time end = Time.valueOf(endText);
 
-        Match match = new Match(event.getEventId(), type, date, start, end);
-        if (includeId) {
-            match.setMatchId(Integer.parseInt(idField.getText().trim()));
-        }
+        Match match = new Match(
+                includeId ? Integer.parseInt(idField.getText().trim()) : 0,
+                event.getEventId(),
+                event.getEventName(),
+                type,
+                date,
+                start,
+                end,
+                (String) statusCombo.getSelectedItem(),
+                summaryField.getText().trim().isEmpty() ? null : summaryField.getText().trim()
+        );
         return match;
-    }
-
-    private void populateForm(Match match) {
-        idField.setText(String.valueOf(match.getMatchId()));
-        selectEvent(match.getEventId());
-        typeCombo.setSelectedItem(match.getMatchType());
-        dateField.setText(match.getMatchDate().toString());
-        startField.setText(match.getMatchTimeStart().toString());
-        endField.setText(match.getMatchTimeEnd().toString());
-    }
-
-    private void selectEvent(int eventId) {
-        ComboBoxModel<Event> model = eventCombo.getModel();
-        for (int i = 0; i < model.getSize(); i++) {
-            Event event = model.getElementAt(i);
-            if (event.getEventId() == eventId) {
-                eventCombo.setSelectedIndex(i);
-                return;
-            }
-        }
-        eventCombo.setSelectedIndex(-1);
     }
 
     private void clearForm() {
         idField.setText("");
         if (eventCombo.getItemCount() > 0) {
             eventCombo.setSelectedIndex(0);
-        } else {
-            eventCombo.setSelectedIndex(-1);
         }
         typeCombo.setSelectedIndex(0);
         dateField.setText("");
         startField.setText("");
         endField.setText("");
+        statusCombo.setSelectedItem("Scheduled");
+        summaryField.setText("");
         table.clearSelection();
     }
 
-    private JPanel buildFormPanel() {
-        JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBorder(BorderFactory.createTitledBorder("Match Details"));
-
-        addFormField(panel, 0, 0, "Match ID (auto)", idField);
-        addFormField(panel, 0, 1, "Event", eventCombo);
-        addFormField(panel, 1, 0, "Match Type", typeCombo);
-        addFormField(panel, 1, 1, "Match Date", dateField);
-        addFormField(panel, 2, 0, "Start Time", startField);
-        addFormField(panel, 2, 1, "End Time", endField);
-
-        return panel;
+    private void reloadEvents() {
+        try {
+            List<Event> events = eventDAO.getAllEvents();
+            DefaultComboBoxModel<Event> model = new DefaultComboBoxModel<>();
+            for (Event event : events) {
+                model.addElement(event);
+            }
+            eventCombo.setModel(model);
+            if (model.getSize() > 0) {
+                eventCombo.setSelectedIndex(0);
+            }
+        } catch (SQLException ex) {
+            showError("Unable to load events:\n" + ex.getMessage());
+        }
     }
 
-    private void addFormField(JPanel panel, int row, int col, String labelText, JComponent component) {
-        GridBagConstraints labelGbc = baseGbc(row, col * 2);
-        labelGbc.anchor = GridBagConstraints.EAST;
-        panel.add(new JLabel(labelText), labelGbc);
-
-        GridBagConstraints fieldGbc = baseGbc(row, col * 2 + 1);
-        fieldGbc.fill = GridBagConstraints.HORIZONTAL;
-        fieldGbc.weightx = 0.5;
-        panel.add(component, fieldGbc);
-    }
-
-    private GridBagConstraints baseGbc(int row, int col) {
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridx = col;
-        gbc.gridy = row;
-        gbc.insets = new Insets(6, 8, 6, 8);
-        gbc.weighty = 0;
-        return gbc;
+    private void reloadTable() {
+        tableModel.setRowCount(0);
+        try {
+            List<Match> matches = matchDAO.getAllMatches();
+            for (Match match : matches) {
+                tableModel.addRow(new Object[]{
+                        match.getMatchId(),
+                        match.toString(),
+                        match.getMatchType(),
+                        match.getMatchDate(),
+                        match.getMatchTimeStart(),
+                        match.getMatchTimeEnd(),
+                        match.getStatus(),
+                        match.getScoreSummary()
+                });
+            }
+        } catch (SQLException ex) {
+            showError("Unable to load matches:\n" + ex.getMessage());
+        }
     }
 
     private void showError(String message) {
