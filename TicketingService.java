@@ -116,7 +116,7 @@ public class TicketingService {
 
     private Event fetchEvent(Connection conn, int eventId, boolean forUpdate) throws SQLException {
         String sql = "SELECT event_id, event_name, sport, match_date, event_time_start, event_time_end, " +
-                "venue_address, event_status FROM event WHERE event_id = ? " + (forUpdate ? "FOR UPDATE" : "");
+                "venue_address, venue_capacity, event_status FROM event WHERE event_id = ? " + (forUpdate ? "FOR UPDATE" : "");
 
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, eventId);
@@ -131,7 +131,8 @@ public class TicketingService {
                             rs.getTime("event_time_start"),
                             rs.getTime("event_time_end"),
                             rs.getString("venue_address"),
-                            rs.getString("event_status")
+                            rs.getString("event_status"),
+                            rs.getInt("venue_capacity")
                     );
                 }
             }

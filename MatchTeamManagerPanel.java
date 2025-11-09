@@ -82,6 +82,9 @@ public class MatchTeamManagerPanel extends JPanel {
             }
         });
 
+        UAAPTheme.styleTable(table);
+        table.getColumnModel().getColumn(1).setCellRenderer(new TeamLogoCellRenderer());
+
         add(new JScrollPane(table), BorderLayout.CENTER);
     }
 
@@ -344,5 +347,25 @@ public class MatchTeamManagerPanel extends JPanel {
 
     private void showInfo(String message) {
         JOptionPane.showMessageDialog(this, message, "Info", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private static final class TeamLogoCellRenderer extends javax.swing.table.DefaultTableCellRenderer {
+        @Override
+        public java.awt.Component getTableCellRendererComponent(
+                JTable table,
+                Object value,
+                boolean isSelected,
+                boolean hasFocus,
+                int row,
+                int column) {
+            JLabel label = (JLabel) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            label.setIcon(UAAPAssets.teamLogo(value != null ? value.toString() : null, 42));
+            label.setHorizontalTextPosition(JLabel.RIGHT);
+            label.setIconTextGap(12);
+            if (!isSelected) {
+                label.setBackground(row % 2 == 0 ? new java.awt.Color(226, 243, 232) : java.awt.Color.WHITE);
+            }
+            return label;
+        }
     }
 }

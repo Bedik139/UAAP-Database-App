@@ -1,4 +1,4 @@
-DROP SCHEMA IF EXISTS UAAPDBSQL;
+﻿DROP SCHEMA IF EXISTS UAAPDBSQL;
 CREATE SCHEMA UAAPDBSQL;
 USE UAAPDBSQL;
 
@@ -9,7 +9,8 @@ CREATE TABLE event (
   match_date        DATE          NOT NULL,
   event_time_start  TIME          NOT NULL,
   event_time_end    TIME          NOT NULL,
-  venue_address     VARCHAR(255)  NOT NULL,
+  venue_address     ENUM('Mall of Asia Arena','Smart Araneta Coliseum','PhilSports Arena','Ynares Center','Filoil EcoOil Centre')  NOT NULL,
+  venue_capacity    INT           NOT NULL,
   event_status      ENUM('Scheduled','Active','Completed','Cancelled') NOT NULL DEFAULT 'Scheduled',
   PRIMARY KEY (event_id)
 );
@@ -136,7 +137,7 @@ CREATE TABLE seat (
   seat_id        INT          NOT NULL AUTO_INCREMENT,
   seat_type      VARCHAR(30)  NOT NULL,
   seat_section   VARCHAR(60),
-  venue_address  VARCHAR(255) NOT NULL,
+  venue_address  ENUM('Mall of Asia Arena','Smart Araneta Coliseum','PhilSports Arena','Ynares Center','Filoil EcoOil Centre') NOT NULL,
   seat_status    ENUM('Available','OnHold','Sold') NOT NULL DEFAULT 'Available',
   PRIMARY KEY (seat_id),
   KEY idx_seat_venue (venue_address)
@@ -224,11 +225,11 @@ VALUES
 ('UP Fighting Maroons', 12, 6, 4, 10),
 ('UST Growling Tigers', 12, 4, 6, 10);
 
-INSERT INTO event (event_name, sport, match_date, event_time_start, event_time_end, venue_address, event_status)
+INSERT INTO event (event_name, sport, match_date, event_time_start, event_time_end, venue_address, venue_capacity, event_status)
 VALUES
-('UAAP Season 87 Basketball Opening', 'Basketball', '2025-11-15', '16:00:00', '18:00:00', 'Mall of Asia Arena', 'Active'),
-('UAAP Season 87 Volleyball Semifinals', 'Volleyball', '2025-12-02', '14:00:00', '17:00:00', 'Smart Araneta Coliseum', 'Scheduled'),
-('UAAP Season 87 Basketball Finals Game 1', 'Basketball', '2026-01-10', '18:00:00', '20:30:00', 'Mall of Asia Arena', 'Scheduled');
+('UAAP Season 87 Basketball Opening', 'Basketball', '2025-11-15', '16:00:00', '18:00:00', 'Mall of Asia Arena', 15000, 'Active'),
+('UAAP Season 87 Volleyball Semifinals', 'Volleyball', '2025-12-02', '14:00:00', '17:00:00', 'Smart Araneta Coliseum', 16000, 'Scheduled'),
+('UAAP Season 87 Basketball Finals Game 1', 'Basketball', '2026-01-10', '18:00:00', '20:30:00', 'Mall of Asia Arena', 15000, 'Scheduled');
 
 INSERT INTO ticket (default_price, price, ticket_status)
 VALUES
@@ -293,3 +294,5 @@ VALUES
 -- Align seat availability with sample transactions
 UPDATE seat SET seat_status = 'Sold' WHERE seat_id IN (1, 2);
 UPDATE seat SET seat_status = 'Available' WHERE seat_id = 4;
+
+

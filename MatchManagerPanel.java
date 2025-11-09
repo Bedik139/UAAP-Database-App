@@ -33,6 +33,7 @@ public class MatchManagerPanel extends JPanel {
 
     private JTable table;
     private DefaultTableModel tableModel;
+    private final MatchSpotlightPanel spotlightPanel = new MatchSpotlightPanel();
 
     private JTextField idField;
     private JComboBox<Event> eventCombo;
@@ -53,6 +54,15 @@ public class MatchManagerPanel extends JPanel {
         setLayout(new BorderLayout(10, 10));
         initForm();
         initTable();
+        JPanel centerDeck = new JPanel(new BorderLayout(12, 0));
+        centerDeck.setOpaque(false);
+        JScrollPane tableScroll = new JScrollPane(table);
+        tableScroll.setBorder(BorderFactory.createEmptyBorder());
+        UAAPTheme.elevate(tableScroll);
+        centerDeck.add(tableScroll, BorderLayout.CENTER);
+        centerDeck.add(spotlightPanel, BorderLayout.EAST);
+        add(centerDeck, BorderLayout.CENTER);
+        spotlightPanel.showcaseMatch(-1);
         initButtons();
         reloadEvents();
         reloadTable();
@@ -70,7 +80,9 @@ public class MatchManagerPanel extends JPanel {
         statusCombo = new JComboBox<>(STATUS_OPTIONS);
         statusCombo.setSelectedItem("Scheduled");
         summaryField = new JTextField();
-        summaryField.setToolTipText("Optional score summary; auto-filled when match results are recorded.");
+        summaryField.setEditable(false);
+        summaryField.setFocusable(false);
+        summaryField.setToolTipText("Auto-generated from match team totals.");
 
         add(buildForm(), BorderLayout.NORTH);
     }
@@ -125,12 +137,15 @@ public class MatchManagerPanel extends JPanel {
                     int row = table.getSelectedRow();
                     if (row >= 0) {
                         populateFormFromTable(row);
+                        showcaseRow(row);
+                    } else {
+                        spotlightPanel.showcaseMatch(-1);
                     }
                 }
             }
         });
 
-        add(new JScrollPane(table), BorderLayout.CENTER);
+        UAAPTheme.styleTable(table);
     }
 
     private void initButtons() {
@@ -170,6 +185,16 @@ public class MatchManagerPanel extends JPanel {
         statusCombo.setSelectedItem(tableModel.getValueAt(row, 6));
         Object summary = tableModel.getValueAt(row, 7);
         summaryField.setText(summary != null ? summary.toString() : "");
+    }
+
+    private void showcaseRow(int row) {
+        Object idValue = tableModel.getValueAt(row, 0);
+        try {
+            int matchId = Integer.parseInt(String.valueOf(idValue));
+            spotlightPanel.showcaseMatch(matchId);
+        } catch (NumberFormatException ex) {
+            spotlightPanel.showcaseMatch(-1);
+        }
     }
 
     private void selectEventByLabel(String label) {
@@ -284,6 +309,7 @@ public class MatchManagerPanel extends JPanel {
         statusCombo.setSelectedItem("Scheduled");
         summaryField.setText("");
         table.clearSelection();
+        spotlightPanel.showcaseMatch(-1);
     }
 
     private void reloadEvents() {
@@ -321,6 +347,7 @@ public class MatchManagerPanel extends JPanel {
         } catch (SQLException ex) {
             showError("Unable to load matches:\n" + ex.getMessage());
         }
+        spotlightPanel.showcaseMatch(-1);
     }
 
     private void showError(String message) {

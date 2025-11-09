@@ -119,4 +119,17 @@ public class MatchTeamDAO {
             ps.executeUpdate();
         }
     }
+
+    public void updateTeamScore(int matchId, int teamId, int teamScore) throws SQLException {
+        String sql = "UPDATE match_team SET team_score = ? WHERE match_id = ? AND team_id = ?";
+
+        try (Connection conn = Database.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, teamScore);
+            ps.setInt(2, matchId);
+            ps.setInt(3, teamId);
+            ps.executeUpdate();
+        }
+    }
 }

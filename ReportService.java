@@ -91,7 +91,7 @@ public class ReportService {
         StringBuilder sql = new StringBuilder();
         sql.append("SELECT e.event_id, e.event_name, e.venue_address, e.match_date, ")
            .append("COUNT(CASE WHEN sat.sale_status = 'Sold' THEN 1 END) AS seats_sold, ")
-           .append("(SELECT COUNT(*) FROM seat WHERE venue_address = e.venue_address) AS total_seats ")
+           .append("e.venue_capacity AS total_seats ")
            .append("FROM event e ")
            .append("LEFT JOIN seat_and_ticket sat ON sat.event_id = e.event_id AND sat.sale_status = 'Sold' ");
 

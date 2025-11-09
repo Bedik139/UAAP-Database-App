@@ -39,7 +39,8 @@ public class EventManagerPanel extends JPanel {
     private JTextField dateField;
     private JTextField startField;
     private JTextField endField;
-    private JTextField venueField;
+    private JComboBox<Venue> venueCombo;
+    private JTextField capacityField;
     private JComboBox<String> statusField;
 
     private JButton addButton;
@@ -47,6 +48,7 @@ public class EventManagerPanel extends JPanel {
     private JButton deleteButton;
     private JButton clearButton;
     private JButton refreshButton;
+    private boolean updatingForm;
 
     public EventManagerPanel() {
         setLayout(new BorderLayout(10, 10));
@@ -69,10 +71,15 @@ public class EventManagerPanel extends JPanel {
         startField.setToolTipText("Format: HH:MM:SS");
         endField = new JTextField();
         endField.setToolTipText("Format: HH:MM:SS");
-        venueField = new JTextField();
+        venueCombo = new JComboBox<>(Venue.values());
+        capacityField = new JTextField();
+        capacityField.setEditable(false);
+        capacityField.setToolTipText("Auto-filled based on venue selection.");
         statusField = new JComboBox<>(STATUS_OPTIONS);
+        venueCombo.addActionListener(e -> autoFillCapacity());
 
         add(buildFormPanel(), BorderLayout.NORTH);
+        autoFillCapacity();
     }
 
     private JPanel buildFormPanel() {
@@ -85,8 +92,9 @@ public class EventManagerPanel extends JPanel {
         addFormField(panel, 1, 1, "Match Date", dateField);
         addFormField(panel, 2, 0, "Start Time", startField);
         addFormField(panel, 2, 1, "End Time", endField);
-        addFormField(panel, 3, 0, "Venue", venueField);
-        addFormField(panel, 3, 1, "Status", statusField);
+        addFormField(panel, 3, 0, "Venue", venueCombo);
+        addFormField(panel, 3, 1, "Venue Capacity", capacityField);
+        addFormField(panel, 4, 0, "Status", statusField);
 
         return panel;
     }
@@ -113,7 +121,7 @@ public class EventManagerPanel extends JPanel {
 
     private void initTable() {
         tableModel = new DefaultTableModel(
-                new Object[]{"ID", "Name", "Sport", "Date", "Start", "End", "Venue", "Status"}, 0
+                new Object[]{"ID", "Name", "Sport", "Date", "Start", "End", "Venue", "Capacity", "Status"}, 0
         ) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -162,14 +170,18 @@ public class EventManagerPanel extends JPanel {
     }
 
     private void populateFormFromTable(int row) {
+        updatingForm = true;
         idField.setText(String.valueOf(tableModel.getValueAt(row, 0)));
         nameField.setText(String.valueOf(tableModel.getValueAt(row, 1)));
         sportField.setSelectedItem(tableModel.getValueAt(row, 2));
         dateField.setText(String.valueOf(tableModel.getValueAt(row, 3)));
         startField.setText(String.valueOf(tableModel.getValueAt(row, 4)));
         endField.setText(String.valueOf(tableModel.getValueAt(row, 5)));
-        venueField.setText(String.valueOf(tableModel.getValueAt(row, 6)));
-        statusField.setSelectedItem(tableModel.getValueAt(row, 7));
+        Venue venue = Venue.fromName(String.valueOf(tableModel.getValueAt(row, 6)));
+        venueCombo.setSelectedItem(venue);
+        capacityField.setText(String.valueOf(tableModel.getValueAt(row, 7)));
+        statusField.setSelectedItem(tableModel.getValueAt(row, 8));
+        updatingForm = false;
     }
 
     private void handleAdd() {
@@ -232,15 +244,17 @@ public class EventManagerPanel extends JPanel {
         String dateText = dateField.getText().trim();
         String startText = startField.getText().trim();
         String endText = endField.getText().trim();
-        String venue = venueField.getText().trim();
+        Venue venue = (Venue) venueCombo.getSelectedItem();
+        String capacityText = capacityField.getText().trim();
 
-        if (name.isEmpty() || dateText.isEmpty() || startText.isEmpty() || endText.isEmpty() || venue.isEmpty()) {
+        if (name.isEmpty() || dateText.isEmpty() || startText.isEmpty() || endText.isEmpty() || venue == null || capacityText.isEmpty()) {
             throw new IllegalArgumentException("All fields except ID are required.");
         }
 
         Date matchDate = Date.valueOf(dateText);
         Time start = Time.valueOf(startText);
         Time end = Time.valueOf(endText);
+        int capacity = Integer.parseInt(capacityText);
 
         Event event = new Event(
                 includeId ? Integer.parseInt(idField.getText().trim()) : 0,
@@ -249,8 +263,9 @@ public class EventManagerPanel extends JPanel {
                 matchDate,
                 start,
                 end,
-                venue,
-                (String) statusField.getSelectedItem()
+                venue.getDisplayName(),
+                (String) statusField.getSelectedItem(),
+                capacity
         );
         return event;
     }
@@ -262,7 +277,11 @@ public class EventManagerPanel extends JPanel {
         dateField.setText("");
         startField.setText("");
         endField.setText("");
-        venueField.setText("");
+        updatingForm = true;
+        venueCombo.setSelectedIndex(0);
+        capacityField.setText("");
+        updatingForm = false;
+        autoFillCapacity();
         statusField.setSelectedIndex(0);
         table.clearSelection();
     }
@@ -280,6 +299,7 @@ public class EventManagerPanel extends JPanel {
                         event.getEventTimeStart(),
                         event.getEventTimeEnd(),
                         event.getVenueAddress(),
+                        event.getVenueCapacity(),
                         event.getEventStatus()
                 });
             }
@@ -294,5 +314,13 @@ public class EventManagerPanel extends JPanel {
 
     private void showInfo(String message) {
         JOptionPane.showMessageDialog(this, message, "Info", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private void autoFillCapacity() {
+        if (updatingForm) {
+            return;
+        }
+        Venue venue = (Venue) venueCombo.getSelectedItem();
+        capacityField.setText(venue != null ? String.valueOf(venue.getCapacity()) : "");
     }
 }

@@ -10,6 +10,7 @@ public class Event {
     private Time eventTimeEnd;
     private String venueAddress;
     private String eventStatus;
+    private int venueCapacity;
 
     public Event() {}
 
@@ -20,7 +21,8 @@ public class Event {
                  Time eventTimeStart,
                  Time eventTimeEnd,
                  String venueAddress,
-                 String eventStatus) {
+                 String eventStatus,
+                 int venueCapacity) {
         this.eventId = eventId;
         this.eventName = eventName;
         this.sport = sport;
@@ -29,6 +31,7 @@ public class Event {
         this.eventTimeEnd = eventTimeEnd;
         this.venueAddress = venueAddress;
         this.eventStatus = eventStatus;
+        this.venueCapacity = venueCapacity;
     }
 
     public Event(String eventName,
@@ -37,8 +40,9 @@ public class Event {
                  Time eventTimeStart,
                  Time eventTimeEnd,
                  String venueAddress,
-                 String eventStatus) {
-        this(0, eventName, sport, matchDate, eventTimeStart, eventTimeEnd, venueAddress, eventStatus);
+                 String eventStatus,
+                 int venueCapacity) {
+        this(0, eventName, sport, matchDate, eventTimeStart, eventTimeEnd, venueAddress, eventStatus, venueCapacity);
     }
 
     public int getEventId() {
@@ -103,6 +107,14 @@ public class Event {
 
     public void setEventStatus(String eventStatus) {
         this.eventStatus = eventStatus;
+    }
+
+    public int getVenueCapacity() {
+        return venueCapacity;
+    }
+
+    public void setVenueCapacity(int venueCapacity) {
+        this.venueCapacity = venueCapacity;
     }
 
     @Override

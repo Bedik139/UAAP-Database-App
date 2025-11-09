@@ -4,18 +4,24 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 public class MatchSetScoreManagerPanel extends JPanel {
 
     private final MatchSetScoreDAO scoreDAO = new MatchSetScoreDAO();
     private final MatchDAO matchDAO = new MatchDAO();
     private final MatchTeamDAO matchTeamDAO = new MatchTeamDAO();
+    private final EventDAO eventDAO = new EventDAO();
+    private final ScoreAggregationService scoreAggregationService = new ScoreAggregationService();
 
     private JTextField matchIdField;
     private JButton loadButton;
@@ -24,10 +30,12 @@ public class MatchSetScoreManagerPanel extends JPanel {
     private JTable table;
     private DefaultTableModel tableModel;
     private List<MatchSetScore> cachedScores = new ArrayList<>();
+    private List<MatchTeam> loadedTeams = new ArrayList<>();
 
     private JComboBox<Team> teamCombo;
     private JTextField setField;
     private JTextField pointsField;
+    private JTextArea setSummaryArea;
 
     private JButton addButton;
     private JButton updateButton;
@@ -35,6 +43,7 @@ public class MatchSetScoreManagerPanel extends JPanel {
     private JButton clearButton;
 
     private Integer currentMatchId;
+    private String currentSport;
     private Integer selectedTeamId;
     private Integer selectedSetNo;
 
@@ -63,7 +72,20 @@ public class MatchSetScoreManagerPanel extends JPanel {
         panel.add(Box.createHorizontalStrut(16));
         panel.add(matchInfoLabel);
 
-        add(panel, BorderLayout.NORTH);
+        setSummaryArea = new JTextArea(4, 40);
+        setSummaryArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+        setSummaryArea.setEditable(false);
+        setSummaryArea.setLineWrap(true);
+        setSummaryArea.setWrapStyleWord(true);
+        setSummaryArea.setText("Load a match to view set-by-set scoring.");
+        JScrollPane summaryScroll = new JScrollPane(setSummaryArea);
+        summaryScroll.setBorder(BorderFactory.createTitledBorder("Set Breakdown"));
+
+        JPanel container = new JPanel(new BorderLayout());
+        container.add(panel, BorderLayout.NORTH);
+        container.add(summaryScroll, BorderLayout.SOUTH);
+
+        add(container, BorderLayout.NORTH);
     }
 
     private void initTable() {
@@ -150,9 +172,26 @@ public class MatchSetScoreManagerPanel extends JPanel {
                 return;
             }
 
-            currentMatchId = matchId;
-            matchInfoLabel.setText(match.toString());
+            Event event = eventDAO.getEventById(match.getEventId());
+            if (event == null) {
+                showError("Unable to locate the parent event for this match.");
+                resetPanelState("Event metadata missing.");
+                return;
+            }
 
+            if (!isVolleyball(event.getSport())) {
+                showError("Set scores are reserved for volleyball matches. Loaded sport: "
+                        + safeSportLabel(event.getSport()));
+                resetPanelState("Unsupported sport: " + safeSportLabel(event.getSport()));
+                return;
+            }
+
+            currentMatchId = matchId;
+            currentSport = event.getSport();
+            matchInfoLabel.setText(match.toString() + " • " + safeSportLabel(event.getSport()));
+
+            seedSetDataIfNeeded(match);
+            recomputeTotals();
             reloadTeamsForMatch();
             reloadScores();
             clearForm();
@@ -166,8 +205,16 @@ public class MatchSetScoreManagerPanel extends JPanel {
 
     private void reloadTeamsForMatch() {
         DefaultComboBoxModel<Team> model = new DefaultComboBoxModel<>();
+        loadedTeams = new ArrayList<>();
+        if (currentMatchId == null) {
+            teamCombo.setModel(model);
+            teamCombo.setEnabled(false);
+            updateSetSummaryArea();
+            return;
+        }
         try {
-            for (MatchTeam mt : matchTeamDAO.getMatchTeamsForMatch(currentMatchId)) {
+            loadedTeams = matchTeamDAO.getMatchTeamsForMatch(currentMatchId);
+            for (MatchTeam mt : loadedTeams) {
                 Team team = new Team();
                 team.setTeamId(mt.getTeamId());
                 team.setTeamName(mt.getTeamName());
@@ -181,12 +228,17 @@ public class MatchSetScoreManagerPanel extends JPanel {
         if (model.getSize() > 0) {
             teamCombo.setSelectedIndex(0);
         }
+        updateSetSummaryArea();
     }
 
     private void reloadScores() {
         tableModel.setRowCount(0);
         cachedScores.clear();
 
+        if (currentMatchId == null) {
+            updateSetSummaryArea();
+            return;
+        }
         try {
             cachedScores = scoreDAO.getScoresForMatch(currentMatchId);
             for (MatchSetScore score : cachedScores) {
@@ -199,6 +251,7 @@ public class MatchSetScoreManagerPanel extends JPanel {
         } catch (SQLException ex) {
             showError("Error loading scores:\n" + ex.getMessage());
         }
+        updateSetSummaryArea();
     }
 
     private void handleAdd() {
@@ -207,6 +260,7 @@ public class MatchSetScoreManagerPanel extends JPanel {
         try {
             MatchSetScore score = formToScore();
             scoreDAO.insertScore(score);
+            recomputeTotals();
             showInfo("Set score saved.");
             reloadScores();
             clearForm();
@@ -225,6 +279,7 @@ public class MatchSetScoreManagerPanel extends JPanel {
         try {
             MatchSetScore score = formToScore();
             scoreDAO.updateScore(score, currentMatchId, selectedTeamId, selectedSetNo);
+            recomputeTotals();
             showInfo("Set score updated.");
             reloadScores();
             clearForm();
@@ -252,6 +307,7 @@ public class MatchSetScoreManagerPanel extends JPanel {
 
         try {
             scoreDAO.deleteScore(currentMatchId, selectedTeamId, selectedSetNo);
+            recomputeTotals();
             showInfo("Set score deleted.");
             reloadScores();
             clearForm();
@@ -350,6 +406,88 @@ public class MatchSetScoreManagerPanel extends JPanel {
         clearButton.setEnabled(enabled);
     }
 
+    private void recomputeTotals() {
+        if (currentMatchId == null) {
+            return;
+        }
+        try {
+            scoreAggregationService.updateTotalsForMatch(currentMatchId);
+        } catch (SQLException ex) {
+            showError("Unable to recompute match totals:\n" + ex.getMessage());
+        }
+    }
+
+    private void resetPanelState(String label) {
+        currentMatchId = null;
+        currentSport = null;
+        matchInfoLabel.setText(label);
+        tableModel.setRowCount(0);
+        cachedScores.clear();
+        teamCombo.setModel(new DefaultComboBoxModel<>());
+        loadedTeams = new ArrayList<>();
+        updateSetSummaryArea();
+        setFormEnabled(false);
+    }
+
+    private boolean isVolleyball(String sport) {
+        return sport != null && sport.toLowerCase().contains("volley");
+    }
+
+    private String safeSportLabel(String sport) {
+        return sport == null || sport.isBlank() ? "Unknown Sport" : sport;
+    }
+
+    private void updateSetSummaryArea() {
+        if (setSummaryArea == null) {
+            return;
+        }
+        if (currentMatchId == null) {
+            setSummaryArea.setText("Load a match to view set-by-set scoring.");
+            setSummaryArea.setCaretPosition(0);
+            return;
+        }
+        if (loadedTeams.isEmpty()) {
+            setSummaryArea.setText("Assign participating teams to this match to see the breakdown.");
+            setSummaryArea.setCaretPosition(0);
+            return;
+        }
+        if (cachedScores.isEmpty()) {
+            setSummaryArea.setText("No set scores recorded yet.");
+            setSummaryArea.setCaretPosition(0);
+            return;
+        }
+
+        List<MatchTeam> orderedTeams = new ArrayList<>(loadedTeams);
+        orderedTeams.sort(Comparator.comparing((MatchTeam team) -> !team.isHomeTeam()));
+
+        Map<Integer, Map<Integer, Integer>> perSet = new TreeMap<>();
+        for (MatchSetScore score : cachedScores) {
+            perSet
+                    .computeIfAbsent(score.getSetNo(), key -> new TreeMap<>())
+                    .put(score.getTeamId(), score.getPoints());
+        }
+
+        StringBuilder builder = new StringBuilder();
+        builder.append(String.format("%-10s", "Set"));
+        for (MatchTeam team : orderedTeams) {
+            builder.append(String.format("%-18s", team.getTeamName()));
+        }
+        builder.append(System.lineSeparator());
+
+        for (Map.Entry<Integer, Map<Integer, Integer>> entry : perSet.entrySet()) {
+            builder.append(String.format("%-10s", "Set " + entry.getKey()));
+            Map<Integer, Integer> pointsByTeam = entry.getValue();
+            for (MatchTeam team : orderedTeams) {
+                int points = pointsByTeam.getOrDefault(team.getTeamId(), 0);
+                builder.append(String.format("%-18d", points));
+            }
+            builder.append(System.lineSeparator());
+        }
+
+        setSummaryArea.setText(builder.toString());
+        setSummaryArea.setCaretPosition(0);
+    }
+
     private void addFormField(JPanel panel, int row, String labelText, JComponent component) {
         GridBagConstraints labelGbc = baseGbc(row, 0);
         labelGbc.anchor = GridBagConstraints.EAST;
@@ -377,4 +515,37 @@ public class MatchSetScoreManagerPanel extends JPanel {
     private void showInfo(String message) {
         JOptionPane.showMessageDialog(this, message, "Info", JOptionPane.INFORMATION_MESSAGE);
     }
+
+    private void seedSetDataIfNeeded(Match match) {
+        if (!"Completed".equalsIgnoreCase(match.getStatus())) {
+            return;
+        }
+        try {
+            if (!scoreDAO.getScoresForMatch(match.getMatchId()).isEmpty()) {
+                return;
+            }
+            List<MatchTeam> teams = matchTeamDAO.getMatchTeamsForMatch(match.getMatchId());
+            if (teams.isEmpty()) {
+                return;
+            }
+            final int segments = 5;
+            for (MatchTeam team : teams) {
+                distributeSetPoints(match.getMatchId(), team, segments);
+            }
+        } catch (SQLException ex) {
+            showError("Unable to seed set data:\n" + ex.getMessage());
+        }
+    }
+
+    private void distributeSetPoints(int matchId, MatchTeam team, int segments) throws SQLException {
+        int total = Math.max(0, team.getTeamScore());
+        int base = total / segments;
+        int remainder = total % segments;
+        for (int setNo = 1; setNo <= segments; setNo++) {
+            int points = base + (setNo <= remainder ? 1 : 0);
+            MatchSetScore score = new MatchSetScore(matchId, team.getTeamId(), setNo, points, null, team.getTeamName());
+            scoreDAO.insertScore(score);
+        }
+    }
 }
+

@@ -9,12 +9,12 @@ public class EventDAO {
 
     private static final String BASE_SELECT =
             "SELECT event_id, event_name, sport, match_date, event_time_start, " +
-            "event_time_end, venue_address, event_status FROM event ";
+            "event_time_end, venue_address, venue_capacity, event_status FROM event ";
 
     public void insertEvent(Event event) throws SQLException {
         String sql = "INSERT INTO event " +
-                "(event_name, sport, match_date, event_time_start, event_time_end, venue_address, event_status) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?)";
+                "(event_name, sport, match_date, event_time_start, event_time_end, venue_address, venue_capacity, event_status) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -25,7 +25,8 @@ public class EventDAO {
             ps.setTime(4, event.getEventTimeStart());
             ps.setTime(5, event.getEventTimeEnd());
             ps.setString(6, event.getVenueAddress());
-            ps.setString(7, event.getEventStatus());
+            ps.setInt(7, event.getVenueCapacity());
+            ps.setString(8, event.getEventStatus());
 
             ps.executeUpdate();
         }
@@ -68,7 +69,7 @@ public class EventDAO {
     public void updateEvent(Event event) throws SQLException {
         String sql = "UPDATE event SET " +
                 "event_name = ?, sport = ?, match_date = ?, event_time_start = ?, " +
-                "event_time_end = ?, venue_address = ?, event_status = ? " +
+                "event_time_end = ?, venue_address = ?, venue_capacity = ?, event_status = ? " +
                 "WHERE event_id = ?";
 
         try (Connection conn = Database.getConnection();
@@ -80,8 +81,9 @@ public class EventDAO {
             ps.setTime(4, event.getEventTimeStart());
             ps.setTime(5, event.getEventTimeEnd());
             ps.setString(6, event.getVenueAddress());
-            ps.setString(7, event.getEventStatus());
-            ps.setInt(8, event.getEventId());
+            ps.setInt(7, event.getVenueCapacity());
+            ps.setString(8, event.getEventStatus());
+            ps.setInt(9, event.getEventId());
 
             ps.executeUpdate();
         }
@@ -121,6 +123,7 @@ public class EventDAO {
         event.setEventTimeEnd(rs.getTime("event_time_end"));
         event.setVenueAddress(rs.getString("venue_address"));
         event.setEventStatus(rs.getString("event_status"));
+        event.setVenueCapacity(rs.getInt("venue_capacity"));
         return event;
     }
 }

@@ -1,34 +1,37 @@
-import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+import java.awt.Window;
 
 public final class UAAPApp {
 
-    private UAAPApp() {}
+    private UAAPApp() {
+    }
 
     public static void main(String[] args) {
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (Exception ignore) {}
+        } catch (Exception ignore) {
+        }
+        UAAPTheme.applyModernDefaults();
+        showRoleSelection();
+    }
 
+    public static void showRoleSelection() {
+        Runnable flow = () -> new UAAPMainMenuFrame().setVisible(true);
+
+        if (SwingUtilities.isEventDispatchThread()) {
+            flow.run();
+        } else {
+            SwingUtilities.invokeLater(flow);
+        }
+    }
+
+    public static void navigateToMainMenu(Window currentWindow) {
         SwingUtilities.invokeLater(() -> {
-            Object[] roles = {"Manager", "Customer"};
-            int choice = JOptionPane.showOptionDialog(
-                    null,
-                    "Welcome to the UAAP system. Please choose your portal:",
-                    "UAAP Portal Selection",
-                    JOptionPane.DEFAULT_OPTION,
-                    JOptionPane.QUESTION_MESSAGE,
-                    null,
-                    roles,
-                    roles[0]
-            );
-
-            if (choice == 1) {
-                CustomerPortalFrame.showUI();
-            } else if (choice == 0) {
-                ManagerDashboardFrame.showUI();
+            if (currentWindow != null) {
+                currentWindow.dispose();
             }
+            showRoleSelection();
         });
     }
 }

@@ -1,7 +1,10 @@
 import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -50,8 +53,23 @@ public class TicketPurchasePanel extends JPanel {
 
     public TicketPurchasePanel() {
         setLayout(new BorderLayout(10, 10));
-        add(buildSelectionPanel(), BorderLayout.NORTH);
-        add(buildCustomerPanel(), BorderLayout.CENTER);
+
+        JPanel formStack = new JPanel();
+        formStack.setOpaque(false);
+        formStack.setLayout(new BoxLayout(formStack, BoxLayout.Y_AXIS));
+        JPanel selectionPanel = buildSelectionPanel();
+        selectionPanel.setAlignmentX(JComponent.LEFT_ALIGNMENT);
+        JPanel customerPanel = buildCustomerPanel();
+        customerPanel.setAlignmentX(JComponent.LEFT_ALIGNMENT);
+        formStack.add(selectionPanel);
+        formStack.add(Box.createVerticalStrut(14));
+        formStack.add(customerPanel);
+
+        JScrollPane formScroll = new JScrollPane(formStack);
+        formScroll.setBorder(BorderFactory.createEmptyBorder());
+        formScroll.getVerticalScrollBar().setUnitIncrement(16);
+
+        add(formScroll, BorderLayout.CENTER);
         add(buildFooterPanel(), BorderLayout.SOUTH);
         reloadAllData();
     }
@@ -80,12 +98,14 @@ public class TicketPurchasePanel extends JPanel {
         addFormField(panel, 4, "Sale Price", priceField);
         addFormField(panel, 5, "Sale Timestamp", saleDateTimeField);
 
+        panel.setAlignmentX(LEFT_ALIGNMENT);
         return panel;
     }
 
     private JPanel buildCustomerPanel() {
         JPanel panel = new JPanel(new GridBagLayout());
         panel.setBorder(BorderFactory.createTitledBorder("Customer Details"));
+        panel.setAlignmentX(LEFT_ALIGNMENT);
 
         customerCombo = new JComboBox<>();
         customerCombo.addActionListener(e -> toggleCustomerFields());
