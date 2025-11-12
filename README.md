@@ -331,9 +331,6 @@ Two portals: **Manager** (full control) | **Customer** (ticket operations)
 - Marks seat as sold (atomic operation)
 
 ## Troubleshooting
-
->>>>>>> 1f98b35fc222a3abb27eb607daf2a573e7505180
-**ClassNotFoundException: com.mysql.cj.jdbc.Driver**
 - Verify `lib/mysql-connector-j-9.5.0.jar` is in classpath
 
 **Connection Failed**
