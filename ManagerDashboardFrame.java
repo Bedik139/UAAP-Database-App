@@ -18,7 +18,7 @@ public class ManagerDashboardFrame extends JFrame {
         root.setBackground(UAAPTheme.LIGHT_SURFACE);
 
         UAAPHeaderPanel headerPanel = new UAAPHeaderPanel(
-                "UAAP Manager Command Center",
+                "UAAP Manager",
                 "Manage the database",
                 () -> UAAPApp.navigateToMainMenu(this)
         );
