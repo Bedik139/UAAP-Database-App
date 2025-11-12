@@ -1,9 +1,4 @@
-<<<<<<< HEAD
-﻿# UAAP Event Management System
-
-Modern Java Swing application for comprehensive UAAP event management, covering scheduling, ticketing, team/player tracking, and real-time reporting with a sleek green-themed UI.
-
-## 🎯 Purpose
+## Purpose
 
 Replaces error-prone spreadsheets with a robust database system for:
 - **Event & Match Scheduling** - Prevent double-booking with automated venue/time validation
@@ -11,13 +6,13 @@ Replaces error-prone spreadsheets with a robust database system for:
 - **Team & Player Tracking** - Live scores, standings, and individual statistics
 - **Revenue Reporting** - Comprehensive analytics on sales, occupancy, and performance
 
-## 📋 Prerequisites
+## Prerequisites
 
 - **Java JDK 11+** (tested with JDK 17)
 - **MySQL 8.0+** (local or network)
 - **MySQL Connector/J 9.5.0** (included in `lib/`)
 
-## 🗄️ Database Setup
+## Database Setup
 
 ### 1. Create Database
 ```sql
@@ -75,7 +70,7 @@ javac -cp ".:lib/mysql-connector-j-9.5.0.jar" *.java
 java -cp ".;lib/mysql-connector-j-9.5.0.jar" UAAPApp
 ```
 
-## 🎨 Application Structure
+## Application Structure
 
 ### **Launch Screen**
 Two portals: **Manager** (full control) | **Customer** (ticket operations)
@@ -153,26 +148,7 @@ Two portals: **Manager** (full control) | **Customer** (ticket operations)
 3. **Validation**: Event not started yet
 4. **Transaction**: Status updated → Seat freed → Audit logged
 
----
-
-## 🎨 Modern UI Features
-
-- **Vibrant emerald green** (#10B981) theme
-- **Color-coded buttons**: Green (action), Red (danger), Gray (neutral), Blue (info)
-- **Styled tables** with alternating light green rows
-- **Rounded borders** with green focus highlights
-- **Smooth hover effects** on all interactive elements
-
-## 🔧 Key Technical Features
-
-✅ **Transaction Safety** - Seat locking prevents double-booking  
-✅ **Cascading Updates** - Single actions update multiple related tables  
-✅ **Audit Trail** - All refunds logged with timestamp/reason  
-✅ **Real-time Validation** - Business rules enforced at service layer  
-✅ **Data Integrity** - Foreign key constraints maintain consistency  
-✅ **Auto-calculations** - Total price, games played computed automatically
-
-## 📊 Database Transactions
+## Database Transactions
 
 ### Transaction 1: Scheduling a Match
 - Verifies event exists and is scheduled
@@ -385,12 +361,6 @@ Two portals: **Manager** (full control) | **Customer** (ticket operations)
 - **Ticket #3** - Courtside: ₱1200
 
 Prices are inherited from seat assignments and can be customized per venue/event.
-
-<<<<<<< HEAD
-## 🏆 UAAP Teams Supported
-=======
-## UAAP Teams Supported
->>>>>>> 1f98b35fc222a3abb27eb607daf2a573e7505180
 
 Ateneo, De La Salle, FEU, UP, UST, NU, UE, Adamson
 
