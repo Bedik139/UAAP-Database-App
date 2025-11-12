@@ -13,7 +13,7 @@ CREATE TABLE event (
   venue_capacity    INT           NOT NULL,
   event_status      ENUM('Scheduled','Active','Completed','Cancelled') NOT NULL DEFAULT 'Scheduled',
   PRIMARY KEY (event_id)
-);
+) AUTO_INCREMENT=1000;
 
 CREATE TABLE team (
   team_id             INT          NOT NULL AUTO_INCREMENT,
@@ -33,7 +33,7 @@ CREATE TABLE team (
   total_games_played  INT          NOT NULL DEFAULT 0,
   PRIMARY KEY (team_id),
   UNIQUE KEY uq_team_name (team_name)
-);
+) AUTO_INCREMENT=1000;
 
 CREATE TABLE player (
   player_id         INT          NOT NULL AUTO_INCREMENT,
@@ -52,9 +52,8 @@ CREATE TABLE player (
   KEY idx_player_sport (player_sport),
   CONSTRAINT fk_player_team
     FOREIGN KEY (team_id) REFERENCES team(team_id)
-    ON DELETE RESTRICT ON UPDATE CASCADE,
-  CONSTRAINT uq_player_number_per_team UNIQUE (team_id,player_number)
-);
+    ON DELETE RESTRICT ON UPDATE CASCADE
+) AUTO_INCREMENT=1000;
 
 CREATE TABLE `match` (
   match_id         INT          NOT NULL AUTO_INCREMENT,
@@ -70,7 +69,7 @@ CREATE TABLE `match` (
   CONSTRAINT fk_match_event
     FOREIGN KEY (event_id) REFERENCES event(event_id)
     ON DELETE CASCADE ON UPDATE CASCADE
-);
+) AUTO_INCREMENT=1000;
 
 CREATE TABLE match_team (
   match_id    INT       NOT NULL,
@@ -126,7 +125,7 @@ CREATE TABLE ticket (
   price         DECIMAL(10,2)  NULL,
   ticket_status ENUM('Active','Inactive','Archived') NOT NULL DEFAULT 'Active',
   PRIMARY KEY (ticket_id)
-);
+) AUTO_INCREMENT=1000;
 
 CREATE TABLE customer (
   customer_id          INT          NOT NULL AUTO_INCREMENT,
@@ -154,7 +153,7 @@ CREATE TABLE customer (
   ),
   PRIMARY KEY (customer_id),
   UNIQUE KEY uq_customer_email (email)
-);
+) AUTO_INCREMENT=1000;
 
 CREATE TABLE seat (
   seat_id        INT          NOT NULL AUTO_INCREMENT,
@@ -168,7 +167,7 @@ CREATE TABLE seat (
   CONSTRAINT fk_seat_ticket
     FOREIGN KEY (ticket_id) REFERENCES ticket(ticket_id)
     ON DELETE RESTRICT ON UPDATE CASCADE
-);
+) AUTO_INCREMENT=1000;
 
 CREATE TABLE seat_and_ticket (
   seat_and_ticket_rec_id INT           NOT NULL AUTO_INCREMENT,
@@ -204,7 +203,7 @@ CREATE TABLE seat_and_ticket (
   CONSTRAINT fk_sat_match
     FOREIGN KEY (match_id) REFERENCES `match`(match_id)
     ON DELETE CASCADE ON UPDATE CASCADE
-);
+) AUTO_INCREMENT=1000;
 
 CREATE TABLE ticket_refund_audit (
   audit_id                INT           NOT NULL AUTO_INCREMENT,
@@ -219,7 +218,7 @@ CREATE TABLE ticket_refund_audit (
   CONSTRAINT fk_refund_sale
     FOREIGN KEY (seat_and_ticket_rec_id) REFERENCES seat_and_ticket(seat_and_ticket_rec_id)
     ON DELETE RESTRICT ON UPDATE CASCADE
-);
+) AUTO_INCREMENT=1000;
 
 CREATE TABLE event_personnel (
   personnel_id          INT          NOT NULL AUTO_INCREMENT,
@@ -245,7 +244,7 @@ CREATE TABLE event_personnel (
   CONSTRAINT fk_ep_match
     FOREIGN KEY (match_id) REFERENCES `match`(match_id)
     ON DELETE CASCADE ON UPDATE CASCADE
-);
+) AUTO_INCREMENT=1000;
 
 -- ========== DATA POPULATION ==========
 
@@ -277,161 +276,161 @@ VALUES
 INSERT INTO player (team_id, player_first_name, player_last_name, player_number, player_sport, age, position, weight, height, individual_score)
 VALUES
 -- DLSU Basketball (5 players)
-(1, 'Kevin', 'Quiambao', 5, 'Basketball', 22, 'SF', 88.0, 1.98, 285),
-(1, 'Evan', 'Nelle', 8, 'Basketball', 23, 'PG', 78.0, 1.85, 245),
-(1, 'Michael', 'Phillips', 15, 'Basketball', 24, 'PF', 92.0, 2.01, 198),
-(1, 'Joshua', 'David', 12, 'Basketball', 21, 'SG', 75.0, 1.83, 167),
-(1, 'Mark', 'Nonoy', 20, 'Basketball', 22, 'C', 95.0, 2.00, 156),
+(1000, 'Kevin', 'Quiambao', 5, 'Basketball', 22, 'SF', 88.0, 1.98, 285),
+(1000, 'Evan', 'Nelle', 8, 'Basketball', 23, 'PG', 78.0, 1.85, 245),
+(1000, 'Michael', 'Phillips', 15, 'Basketball', 24, 'PF', 92.0, 2.01, 198),
+(1000, 'Joshua', 'David', 12, 'Basketball', 21, 'SG', 75.0, 1.83, 167),
+(1000, 'Mark', 'Nonoy', 20, 'Basketball', 22, 'C', 95.0, 2.00, 156),
 -- Ateneo Basketball (5 players)
-(2, 'Forthsky', 'Padrigao', 11, 'Basketball', 22, 'SG', 75.0, 1.82, 267),
-(2, 'Kai', 'Ballungay', 4, 'Basketball', 24, 'PF', 92.0, 2.03, 243),
-(2, 'Chris', 'Koon', 33, 'Basketball', 23, 'C', 98.0, 2.05, 189),
-(2, 'Sean', 'Quitevis', 7, 'Basketball', 21, 'PG', 74.0, 1.81, 156),
-(2, 'Jared', 'Bahay', 14, 'Basketball', 22, 'SF', 81.0, 1.90, 178),
+(1001, 'Forthsky', 'Padrigao', 11, 'Basketball', 22, 'SG', 75.0, 1.82, 267),
+(1001, 'Kai', 'Ballungay', 4, 'Basketball', 24, 'PF', 92.0, 2.03, 243),
+(1001, 'Chris', 'Koon', 33, 'Basketball', 23, 'C', 98.0, 2.05, 189),
+(1001, 'Sean', 'Quitevis', 7, 'Basketball', 21, 'PG', 74.0, 1.81, 156),
+(1001, 'Jared', 'Bahay', 14, 'Basketball', 22, 'SF', 81.0, 1.90, 178),
 -- UP Basketball (5 players)
-(3, 'Carl', 'Tamayo', 33, 'Basketball', 23, 'PF', 95.0, 2.05, 256),
-(3, 'Malick', 'Diouf', 11, 'Basketball', 22, 'C', 102.0, 2.08, 234),
-(3, 'Francis', 'Lopez', 7, 'Basketball', 24, 'SG', 77.0, 1.85, 198),
-(3, 'Terrence', 'Fortea', 8, 'Basketball', 21, 'PG', 73.0, 1.80, 167),
-(3, 'Aldous', 'Torculas', 10, 'Basketball', 23, 'SF', 85.0, 1.92, 145),
+(1002, 'Carl', 'Tamayo', 33, 'Basketball', 23, 'PF', 95.0, 2.05, 256),
+(1002, 'Malick', 'Diouf', 11, 'Basketball', 22, 'C', 102.0, 2.08, 234),
+(1002, 'Francis', 'Lopez', 7, 'Basketball', 24, 'SG', 77.0, 1.85, 198),
+(1002, 'Terrence', 'Fortea', 8, 'Basketball', 21, 'PG', 73.0, 1.80, 167),
+(1002, 'Aldous', 'Torculas', 10, 'Basketball', 23, 'SF', 85.0, 1.92, 145),
 -- UST Basketball (5 players)
-(4, 'Soulemane', 'Chabi Yo', 15, 'Basketball', 25, 'C', 100.0, 2.01, 223),
-(4, 'Nic', 'Cabanero', 12, 'Basketball', 23, 'PG', 76.0, 1.83, 189),
-(4, 'Christian', 'Manaytay', 7, 'Basketball', 22, 'SF', 88.0, 1.95, 167),
-(4, 'Royce', 'Mantua', 24, 'Basketball', 21, 'SG', 75.0, 1.81, 145),
-(4, 'Paul', 'Manalang', 21, 'Basketball', 22, 'PF', 90.0, 1.98, 134),
+(1003, 'Soulemane', 'Chabi Yo', 15, 'Basketball', 25, 'C', 100.0, 2.01, 223),
+(1003, 'Nic', 'Cabanero', 12, 'Basketball', 23, 'PG', 76.0, 1.83, 189),
+(1003, 'Christian', 'Manaytay', 7, 'Basketball', 22, 'SF', 88.0, 1.95, 167),
+(1003, 'Royce', 'Mantua', 24, 'Basketball', 21, 'SG', 75.0, 1.81, 145),
+(1003, 'Paul', 'Manalang', 21, 'Basketball', 22, 'PF', 90.0, 1.98, 134),
 -- FEU Basketball (5 players)
-(5, 'Royce', 'Alforque', 11, 'Basketball', 23, 'PG', 77.0, 1.84, 234),
-(5, 'Mo', 'Konateh', 33, 'Basketball', 24, 'C', 99.0, 2.04, 212),
-(5, 'Veejay', 'Pre', 5, 'Basketball', 22, 'SF', 87.0, 1.96, 178),
-(5, 'Jilson', 'Bautista', 7, 'Basketball', 21, 'SG', 74.0, 1.82, 156),
-(5, 'Patrick', 'Sleat', 4, 'Basketball', 23, 'PF', 91.0, 2.00, 145),
+(1004, 'Royce', 'Alforque', 11, 'Basketball', 23, 'PG', 77.0, 1.84, 234),
+(1004, 'Mo', 'Konateh', 33, 'Basketball', 24, 'C', 99.0, 2.04, 212),
+(1004, 'Veejay', 'Pre', 5, 'Basketball', 22, 'SF', 87.0, 1.96, 178),
+(1004, 'Jilson', 'Bautista', 7, 'Basketball', 21, 'SG', 74.0, 1.82, 156),
+(1004, 'Patrick', 'Sleat', 4, 'Basketball', 23, 'PF', 91.0, 2.00, 145),
 -- UE Basketball (5 players)
-(6, 'Precious', 'Momowei', 14, 'Basketball', 24, 'C', 101.0, 2.06, 198),
-(6, 'Ethan', 'Galang', 7, 'Basketball', 22, 'SG', 76.0, 1.83, 167),
-(6, 'Kyle', 'Paranada', 11, 'Basketball', 21, 'SF', 86.0, 1.95, 145),
-(6, 'Wello', 'Lingolingo', 5, 'Basketball', 23, 'PG', 73.0, 1.80, 123),
-(6, 'Rey', 'Remogat', 9, 'Basketball', 22, 'PF', 89.0, 1.97, 112),
+(1005, 'Precious', 'Momowei', 14, 'Basketball', 24, 'C', 101.0, 2.06, 198),
+(1005, 'Ethan', 'Galang', 7, 'Basketball', 22, 'SG', 76.0, 1.83, 167),
+(1005, 'Kyle', 'Paranada', 11, 'Basketball', 21, 'SF', 86.0, 1.95, 145),
+(1005, 'Wello', 'Lingolingo', 5, 'Basketball', 23, 'PG', 73.0, 1.80, 123),
+(1005, 'Rey', 'Remogat', 9, 'Basketball', 22, 'PF', 89.0, 1.97, 112),
 -- NU Basketball (5 players)
-(7, 'Steve', 'Nash', 11, 'Basketball', 23, 'PG', 78.0, 1.86, 245),
-(7, 'Jake', 'Figueroa', 22, 'Basketball', 24, 'PF', 93.0, 2.00, 223),
-(7, 'PJ', 'Palacielo', 7, 'Basketball', 22, 'C', 97.0, 2.03, 189),
-(7, 'Kenshin', 'Padilla', 15, 'Basketball', 21, 'SG', 75.0, 1.82, 167),
-(7, 'Jake', 'Palaganas', 3, 'Basketball', 22, 'SF', 84.0, 1.93, 156),
+(1006, 'Steve', 'Nash', 11, 'Basketball', 23, 'PG', 78.0, 1.86, 245),
+(1006, 'Jake', 'Figueroa', 22, 'Basketball', 24, 'PF', 93.0, 2.00, 223),
+(1006, 'PJ', 'Palacielo', 7, 'Basketball', 22, 'C', 97.0, 2.03, 189),
+(1006, 'Kenshin', 'Padilla', 15, 'Basketball', 21, 'SG', 75.0, 1.82, 167),
+(1006, 'Jake', 'Palaganas', 3, 'Basketball', 22, 'SF', 84.0, 1.93, 156),
 -- Adamson Basketball (5 players)
-(8, 'Matty', 'Erolon', 7, 'Basketball', 22, 'PG', 77.0, 1.84, 212),
-(8, 'Matthew', 'Montebon', 23, 'Basketball', 23, 'SF', 90.0, 1.98, 189),
-(8, 'Didat', 'Hanapi', 11, 'Basketball', 24, 'C', 96.0, 2.02, 167),
-(8, 'Joshua', 'Barcelona', 5, 'Basketball', 21, 'SG', 74.0, 1.81, 145),
-(8, 'Joem', 'Sabandal', 13, 'Basketball', 23, 'PF', 88.0, 1.96, 134),
+(1007, 'Matty', 'Erolon', 7, 'Basketball', 22, 'PG', 77.0, 1.84, 212),
+(1007, 'Matthew', 'Montebon', 23, 'Basketball', 23, 'SF', 90.0, 1.98, 189),
+(1007, 'Didat', 'Hanapi', 11, 'Basketball', 24, 'C', 96.0, 2.02, 167),
+(1007, 'Joshua', 'Barcelona', 5, 'Basketball', 21, 'SG', 74.0, 1.81, 145),
+(1007, 'Joem', 'Sabandal', 13, 'Basketball', 23, 'PF', 88.0, 1.96, 134),
 -- DLSU Volleyball (6 players)
-(1, 'Angel', 'Canino', 1, 'Volleyball', 21, 'S', 60.0, 1.75, 145),
-(1, 'Leila', 'Cruz', 3, 'Volleyball', 22, 'OH', 65.0, 1.80, 178),
-(1, 'Julia', 'Coronel', 9, 'Volleyball', 20, 'MB', 68.0, 1.85, 134),
-(1, 'Thea', 'Gagate', 14, 'Volleyball', 21, 'OH', 64.0, 1.78, 123),
-(1, 'Baby Love', 'Barbon', 7, 'Volleyball', 22, 'MB', 67.0, 1.84, 112),
-(1, 'Justine', 'Jazareno', 4, 'Volleyball', 20, 'L', 58.0, 1.68, 98),
+(1000, 'Angel', 'Canino', 1, 'Volleyball', 21, 'S', 60.0, 1.75, 145),
+(1000, 'Leila', 'Cruz', 3, 'Volleyball', 22, 'OH', 65.0, 1.80, 178),
+(1000, 'Julia', 'Coronel', 9, 'Volleyball', 20, 'MB', 68.0, 1.85, 134),
+(1000, 'Thea', 'Gagate', 14, 'Volleyball', 21, 'OH', 64.0, 1.78, 123),
+(1000, 'Baby Love', 'Barbon', 7, 'Volleyball', 22, 'MB', 67.0, 1.84, 112),
+(1000, 'Justine', 'Jazareno', 4, 'Volleyball', 20, 'L', 58.0, 1.68, 98),
 -- Ateneo Volleyball (6 players)
-(2, 'Jhoana', 'Maraguinot', 2, 'Volleyball', 23, 'S', 61.0, 1.76, 156),
-(2, 'Faith', 'Nisperos', 6, 'Volleyball', 22, 'OH', 64.0, 1.79, 189),
-(2, 'Vanie', 'Gandler', 16, 'Volleyball', 21, 'MB', 69.0, 1.86, 145),
-(2, 'Lyann', 'DeGuzman', 9, 'Volleyball', 22, 'OH', 63.0, 1.77, 134),
-(2, 'AC', 'Miner', 11, 'Volleyball', 21, 'MB', 68.0, 1.83, 123),
-(2, 'Dani', 'Ravena', 5, 'Volleyball', 20, 'L', 59.0, 1.70, 106),
+(1001, 'Jhoana', 'Maraguinot', 2, 'Volleyball', 23, 'S', 61.0, 1.76, 156),
+(1001, 'Faith', 'Nisperos', 6, 'Volleyball', 22, 'OH', 64.0, 1.79, 189),
+(1001, 'Vanie', 'Gandler', 16, 'Volleyball', 21, 'MB', 69.0, 1.86, 145),
+(1001, 'Lyann', 'DeGuzman', 9, 'Volleyball', 22, 'OH', 63.0, 1.77, 134),
+(1001, 'AC', 'Miner', 11, 'Volleyball', 21, 'MB', 68.0, 1.83, 123),
+(1001, 'Dani', 'Ravena', 5, 'Volleyball', 20, 'L', 59.0, 1.70, 106),
 -- UP Volleyball (6 players)
-(3, 'Alyssa', 'Bertolano', 12, 'Volleyball', 22, 'S', 62.0, 1.74, 134),
-(3, 'Jewel', 'Lai', 18, 'Volleyball', 21, 'OH', 66.0, 1.81, 178),
-(3, 'Stephanie', 'Bustrillo', 21, 'Volleyball', 23, 'MB', 70.0, 1.87, 156),
-(3, 'Nina', 'Ytang', 7, 'Volleyball', 22, 'OH', 64.0, 1.79, 145),
-(3, 'Cassie', 'Lim', 14, 'Volleyball', 21, 'MB', 67.0, 1.84, 123),
-(3, 'Marist', 'Layug', 4, 'Volleyball', 20, 'L', 57.0, 1.67, 98),
+(1002, 'Alyssa', 'Bertolano', 12, 'Volleyball', 22, 'S', 62.0, 1.74, 134),
+(1002, 'Jewel', 'Lai', 18, 'Volleyball', 21, 'OH', 66.0, 1.81, 178),
+(1002, 'Stephanie', 'Bustrillo', 21, 'Volleyball', 23, 'MB', 70.0, 1.87, 156),
+(1002, 'Nina', 'Ytang', 7, 'Volleyball', 22, 'OH', 64.0, 1.79, 145),
+(1002, 'Cassie', 'Lim', 14, 'Volleyball', 21, 'MB', 67.0, 1.84, 123),
+(1002, 'Marist', 'Layug', 4, 'Volleyball', 20, 'L', 57.0, 1.67, 98),
 -- UST Volleyball (6 players)
-(4, 'Cassie', 'Carballo', 4, 'Volleyball', 22, 'S', 60.0, 1.73, 123),
-(4, 'Eya', 'Laure', 19, 'Volleyball', 23, 'OH', 65.0, 1.82, 189),
-(4, 'Xyza', 'Gula', 13, 'Volleyball', 21, 'MB', 68.0, 1.84, 134),
-(4, 'Imee', 'Hernandez', 8, 'Volleyball', 22, 'OH', 63.0, 1.78, 145),
-(4, 'Angge', 'Poyos', 11, 'Volleyball', 21, 'MB', 67.0, 1.85, 112),
-(4, 'KC', 'De Luna', 2, 'Volleyball', 20, 'L', 58.0, 1.69, 95),
+(1003, 'Cassie', 'Carballo', 4, 'Volleyball', 22, 'S', 60.0, 1.73, 123),
+(1003, 'Eya', 'Laure', 19, 'Volleyball', 23, 'OH', 65.0, 1.82, 189),
+(1003, 'Xyza', 'Gula', 13, 'Volleyball', 21, 'MB', 68.0, 1.84, 134),
+(1003, 'Imee', 'Hernandez', 8, 'Volleyball', 22, 'OH', 63.0, 1.78, 145),
+(1003, 'Angge', 'Poyos', 11, 'Volleyball', 21, 'MB', 67.0, 1.85, 112),
+(1003, 'KC', 'De Luna', 2, 'Volleyball', 20, 'L', 58.0, 1.69, 95),
 -- FEU Volleyball (6 players)
-(5, 'Kyle', 'Negrito', 3, 'Volleyball', 21, 'S', 61.0, 1.75, 145),
-(5, 'Jean', 'Asis', 6, 'Volleyball', 22, 'OH', 64.0, 1.78, 167),
-(5, 'Ivana', 'Agudo', 17, 'Volleyball', 23, 'MB', 69.0, 1.85, 134),
-(5, 'Tin', 'Ubaldo', 9, 'Volleyball', 22, 'OH', 63.0, 1.77, 123),
-(5, 'Shiela', 'Kiseo', 12, 'Volleyball', 21, 'MB', 66.0, 1.83, 112),
-(5, 'Buding', 'Duremdes', 5, 'Volleyball', 20, 'L', 57.0, 1.68, 98),
+(1004, 'Kyle', 'Negrito', 3, 'Volleyball', 21, 'S', 61.0, 1.75, 145),
+(1004, 'Jean', 'Asis', 6, 'Volleyball', 22, 'OH', 64.0, 1.78, 167),
+(1004, 'Ivana', 'Agudo', 17, 'Volleyball', 23, 'MB', 69.0, 1.85, 134),
+(1004, 'Tin', 'Ubaldo', 9, 'Volleyball', 22, 'OH', 63.0, 1.77, 123),
+(1004, 'Shiela', 'Kiseo', 12, 'Volleyball', 21, 'MB', 66.0, 1.83, 112),
+(1004, 'Buding', 'Duremdes', 5, 'Volleyball', 20, 'L', 57.0, 1.68, 98),
 -- UE Volleyball (6 players)
-(6, 'KC', 'Galdones', 1, 'Volleyball', 22, 'S', 60.0, 1.74, 123),
-(6, 'Kath', 'Arado', 26, 'Volleyball', 21, 'OH', 66.0, 1.80, 145),
-(6, 'Mary Rhose', 'Dapol', 12, 'Volleyball', 23, 'MB', 68.0, 1.83, 134),
-(6, 'Judith', 'Abil', 7, 'Volleyball', 22, 'OH', 64.0, 1.79, 123),
-(6, 'Casiey', 'Dongallo', 14, 'Volleyball', 21, 'MB', 67.0, 1.84, 112),
-(6, 'Ja-Rone', 'Kaal', 3, 'Volleyball', 20, 'L', 58.0, 1.70, 95),
+(1005, 'KC', 'Galdones', 1, 'Volleyball', 22, 'S', 60.0, 1.74, 123),
+(1005, 'Kath', 'Arado', 26, 'Volleyball', 21, 'OH', 66.0, 1.80, 145),
+(1005, 'Mary Rhose', 'Dapol', 12, 'Volleyball', 23, 'MB', 68.0, 1.83, 134),
+(1005, 'Judith', 'Abil', 7, 'Volleyball', 22, 'OH', 64.0, 1.79, 123),
+(1005, 'Casiey', 'Dongallo', 14, 'Volleyball', 21, 'MB', 67.0, 1.84, 112),
+(1005, 'Ja-Rone', 'Kaal', 3, 'Volleyball', 20, 'L', 58.0, 1.70, 95),
 -- NU Volleyball (6 players)
-(7, 'Joyme', 'Cagande', 10, 'Volleyball', 22, 'S', 61.0, 1.76, 156),
-(7, 'Ivy', 'Lacsina', 25, 'Volleyball', 21, 'OH', 65.0, 1.79, 167),
-(7, 'Bella', 'Belen', 15, 'Volleyball', 23, 'MB', 69.0, 1.86, 145),
-(7, 'Alyssa', 'Solomon', 8, 'Volleyball', 22, 'OH', 64.0, 1.78, 134),
-(7, 'Rosel', 'Predenciado', 13, 'Volleyball', 21, 'MB', 68.0, 1.85, 123),
-(7, 'Jen', 'Nierva', 6, 'Volleyball', 20, 'L', 57.0, 1.67, 106),
+(1006, 'Joyme', 'Cagande', 10, 'Volleyball', 22, 'S', 61.0, 1.76, 156),
+(1006, 'Ivy', 'Lacsina', 25, 'Volleyball', 21, 'OH', 65.0, 1.79, 167),
+(1006, 'Bella', 'Belen', 15, 'Volleyball', 23, 'MB', 69.0, 1.86, 145),
+(1006, 'Alyssa', 'Solomon', 8, 'Volleyball', 22, 'OH', 64.0, 1.78, 134),
+(1006, 'Rosel', 'Predenciado', 13, 'Volleyball', 21, 'MB', 68.0, 1.85, 123),
+(1006, 'Jen', 'Nierva', 6, 'Volleyball', 20, 'L', 57.0, 1.67, 106),
 -- Adamson Volleyball (6 players)
-(8, 'Louie', 'Romero', 2, 'Volleyball', 21, 'S', 60.0, 1.73, 134),
-(8, 'Trisha', 'Genesis', 22, 'Volleyball', 22, 'OH', 64.0, 1.77, 156),
-(8, 'Lorene', 'Toring', 11, 'Volleyball', 23, 'MB', 68.0, 1.84, 123),
-(8, 'Lucille', 'Almonte', 5, 'Volleyball', 22, 'OH', 63.0, 1.76, 112),
-(8, 'May', 'Roque', 9, 'Volleyball', 21, 'MB', 67.0, 1.83, 106),
-(8, 'Kate', 'Santiago', 4, 'Volleyball', 20, 'L', 58.0, 1.69, 95);
+(1007, 'Louie', 'Romero', 2, 'Volleyball', 21, 'S', 60.0, 1.73, 134),
+(1007, 'Trisha', 'Genesis', 22, 'Volleyball', 22, 'OH', 64.0, 1.77, 156),
+(1007, 'Lorene', 'Toring', 11, 'Volleyball', 23, 'MB', 68.0, 1.84, 123),
+(1007, 'Lucille', 'Almonte', 5, 'Volleyball', 22, 'OH', 63.0, 1.76, 112),
+(1007, 'May', 'Roque', 9, 'Volleyball', 21, 'MB', 67.0, 1.83, 106),
+(1007, 'Kate', 'Santiago', 4, 'Volleyball', 20, 'L', 58.0, 1.69, 95);
 
 -- Matches
 INSERT INTO `match` (event_id, match_type, match_date, match_time_start, match_time_end, status, score_summary)
 VALUES
-(1, 'Elimination_Round', '2025-11-15', '14:00:00', '16:00:00', 'Completed', 'DLSU 78 - ADMU 74'),
-(1, 'Elimination_Round', '2025-11-15', '16:30:00', '18:30:00', 'Completed', 'UP 82 - NU 79'),
-(2, 'Elimination_Round', '2025-11-20', '16:00:00', '18:00:00', 'Completed', 'UST 76 - FEU 72'),
-(3, 'Elimination_Round', '2025-11-25', '18:00:00', '20:00:00', 'Completed', 'ADMU 85 - UE 68'),
-(4, 'Semifinals', '2025-12-15', '18:00:00', '20:30:00', 'Scheduled', NULL),
-(5, 'Finals', '2026-01-10', '18:00:00', '21:00:00', 'Scheduled', NULL),
-(6, 'Elimination_Round', '2025-11-18', '14:00:00', '17:00:00', 'Completed', 'DLSU 3-1 UST'),
-(7, 'Elimination_Round', '2025-11-22', '14:00:00', '17:00:00', 'Completed', 'ADMU 3-2 UP'),
-(8, 'Semifinals', '2025-12-20', '14:00:00', '18:00:00', 'Scheduled', NULL);
+(1000, 'Elimination_Round', '2025-11-15', '14:00:00', '16:00:00', 'Completed', 'DLSU 78 - ADMU 74'),
+(1000, 'Elimination_Round', '2025-11-15', '16:30:00', '18:30:00', 'Completed', 'UP 82 - NU 79'),
+(1001, 'Elimination_Round', '2025-11-20', '16:00:00', '18:00:00', 'Completed', 'UST 76 - FEU 72'),
+(1002, 'Elimination_Round', '2025-11-25', '18:00:00', '20:00:00', 'Completed', 'ADMU 85 - UE 68'),
+(1003, 'Semifinals', '2025-12-15', '18:00:00', '20:30:00', 'Scheduled', NULL),
+(1004, 'Finals', '2026-01-10', '18:00:00', '21:00:00', 'Scheduled', NULL),
+(1005, 'Elimination_Round', '2025-11-18', '14:00:00', '17:00:00', 'Completed', 'DLSU 3-1 UST'),
+(1006, 'Elimination_Round', '2025-11-22', '14:00:00', '17:00:00', 'Completed', 'ADMU 3-2 UP'),
+(1007, 'Semifinals', '2025-12-20', '14:00:00', '18:00:00', 'Scheduled', NULL);
 
 -- Match Teams
 INSERT INTO match_team (match_id, team_id, is_home, team_score)
 VALUES
-(1, 1, TRUE, 78), (1, 2, FALSE, 74),
-(2, 3, TRUE, 82), (2, 7, FALSE, 79),
-(3, 4, TRUE, 76), (3, 5, FALSE, 72),
-(4, 2, TRUE, 85), (4, 6, FALSE, 68),
-(5, 1, TRUE, 0), (5, 2, FALSE, 0),
-(6, 1, TRUE, 0), (6, 3, FALSE, 0),
-(7, 1, TRUE, 3), (7, 4, FALSE, 1),
-(8, 2, TRUE, 3), (8, 3, FALSE, 2),
-(9, 1, TRUE, 0), (9, 2, FALSE, 0);
+(1000, 1000, TRUE, 78), (1000, 1001, FALSE, 74),
+(1001, 1002, TRUE, 82), (1001, 1006, FALSE, 79),
+(1002, 1003, TRUE, 76), (1002, 1004, FALSE, 72),
+(1003, 1001, TRUE, 85), (1003, 1005, FALSE, 68),
+(1004, 1000, TRUE, 0), (1004, 1001, FALSE, 0),
+(1005, 1000, TRUE, 0), (1005, 1002, FALSE, 0),
+(1006, 1000, TRUE, 3), (1006, 1003, FALSE, 1),
+(1007, 1001, TRUE, 3), (1007, 1002, FALSE, 2),
+(1008, 1000, TRUE, 0), (1008, 1001, FALSE, 0);
 
 -- Basketball Quarter Scores
 INSERT INTO match_quarter_score (match_id, team_id, quarter_no, quarter_points)
 VALUES
--- Match 1: DLSU 78 - ADMU 74
-(1, 1, 1, 18), (1, 1, 2, 22), (1, 1, 3, 19), (1, 1, 4, 19),
-(1, 2, 1, 20), (1, 2, 2, 18), (1, 2, 3, 17), (1, 2, 4, 19),
--- Match 2: UP 82 - NU 79
-(2, 3, 1, 21), (2, 3, 2, 19), (2, 3, 3, 22), (2, 3, 4, 20),
-(2, 7, 1, 18), (2, 7, 2, 22), (2, 7, 3, 19), (2, 7, 4, 20),
--- Match 3: UST 76 - FEU 72
-(3, 4, 1, 19), (3, 4, 2, 18), (3, 4, 3, 20), (3, 4, 4, 19),
-(3, 5, 1, 17), (3, 5, 2, 19), (3, 5, 3, 18), (3, 5, 4, 18),
--- Match 4: ADMU 85 - UE 68
-(4, 2, 1, 22), (4, 2, 2, 21), (4, 2, 3, 20), (4, 2, 4, 22),
-(4, 6, 1, 16), (4, 6, 2, 18), (4, 6, 3, 17), (4, 6, 4, 17);
+-- Match 1000: DLSU 78 - ADMU 74
+(1000, 1000, 1, 18), (1000, 1000, 2, 22), (1000, 1000, 3, 19), (1000, 1000, 4, 19),
+(1000, 1001, 1, 20), (1000, 1001, 2, 18), (1000, 1001, 3, 17), (1000, 1001, 4, 19),
+-- Match 1001: UP 82 - NU 79
+(1001, 1002, 1, 21), (1001, 1002, 2, 19), (1001, 1002, 3, 22), (1001, 1002, 4, 20),
+(1001, 1006, 1, 18), (1001, 1006, 2, 22), (1001, 1006, 3, 19), (1001, 1006, 4, 20),
+-- Match 1002: UST 76 - FEU 72
+(1002, 1003, 1, 19), (1002, 1003, 2, 18), (1002, 1003, 3, 20), (1002, 1003, 4, 19),
+(1002, 1004, 1, 17), (1002, 1004, 2, 19), (1002, 1004, 3, 18), (1002, 1004, 4, 18),
+-- Match 1003: ADMU 85 - UE 68
+(1003, 1001, 1, 22), (1003, 1001, 2, 21), (1003, 1001, 3, 20), (1003, 1001, 4, 22),
+(1003, 1005, 1, 16), (1003, 1005, 2, 18), (1003, 1005, 3, 17), (1003, 1005, 4, 17);
 
 -- Volleyball Set Scores
 INSERT INTO match_set_score (match_id, team_id, set_no, set_points)
 VALUES
--- Match 7: DLSU 3-1 UST
-(7, 1, 1, 25), (7, 1, 2, 23), (7, 1, 3, 25), (7, 1, 4, 25),
-(7, 4, 1, 22), (7, 4, 2, 25), (7, 4, 3, 20), (7, 4, 4, 18),
--- Match 8: ADMU 3-2 UP
-(8, 2, 1, 25), (8, 2, 2, 22), (8, 2, 3, 25), (8, 2, 4, 23), (8, 2, 5, 15),
-(8, 3, 1, 23), (8, 3, 2, 25), (8, 3, 3, 20), (8, 3, 4, 25), (8, 3, 5, 12);
+-- Match 1006: DLSU 3-1 UST
+(1006, 1000, 1, 25), (1006, 1000, 2, 23), (1006, 1000, 3, 25), (1006, 1000, 4, 25),
+(1006, 1003, 1, 22), (1006, 1003, 2, 25), (1006, 1003, 3, 20), (1006, 1003, 4, 18),
+-- Match 1007: ADMU 3-2 UP
+(1007, 1001, 1, 25), (1007, 1001, 2, 22), (1007, 1001, 3, 25), (1007, 1001, 4, 23), (1007, 1001, 5, 15),
+(1007, 1002, 1, 23), (1007, 1002, 2, 25), (1007, 1002, 3, 20), (1007, 1002, 4, 25), (1007, 1002, 5, 12);
 
 -- Tickets
 INSERT INTO ticket (default_price, price, ticket_status)
@@ -459,32 +458,33 @@ VALUES
 -- Seats
 INSERT INTO seat (seat_type, venue_address, seat_status, ticket_id)
 VALUES
-('Lower Box', 'Mall of Asia Arena', 'Sold', 3),
-('Lower Box', 'Mall of Asia Arena', 'Sold', 3),
-('Upper Box', 'Mall of Asia Arena', 'Available', 2),
-('Courtside', 'Smart Araneta Coliseum', 'Available', 4),
-('Courtside', 'Smart Araneta Coliseum', 'Available', 4),
-('Upper Box', 'Smart Araneta Coliseum', 'Available', 2),
-('Lower Box', 'PhilSports Arena', 'Available', 3),
-('General Admission', 'Mall of Asia Arena', 'Available', 1),
-('Patron', 'Mall of Asia Arena', 'Available', 5),
-('Patron', 'Smart Araneta Coliseum', 'Available', 5);
+('Lower Box', 'Mall of Asia Arena', 'Sold', 1002),
+('Lower Box', 'Mall of Asia Arena', 'Sold', 1002),
+('Upper Box', 'Mall of Asia Arena', 'Available', 1001),
+('Courtside', 'Smart Araneta Coliseum', 'Available', 1003),
+('Courtside', 'Smart Araneta Coliseum', 'Available', 1003),
+('Upper Box', 'Smart Araneta Coliseum', 'Available', 1001),
+('Lower Box', 'PhilSports Arena', 'Available', 1002),
+('General Admission', 'Mall of Asia Arena', 'Available', 1000),
+('Patron', 'Mall of Asia Arena', 'Available', 1004),
+('Patron', 'Smart Araneta Coliseum', 'Available', 1004);
 
 -- Seat and Ticket Transactions
 INSERT INTO seat_and_ticket (seat_id, event_id, customer_id, sale_datetime, quantity, unit_price, ticket_id, match_id, sale_status)
 VALUES
-(1, 1, 1, '2025-11-01 10:00:00', 1, 750.00, 3, 1, 'Sold'),
-(2, 1, 2, '2025-11-02 09:30:00', 1, 750.00, 3, 1, 'Sold'),
-(4, 2, 3, '2025-11-15 11:15:00', 1, 1200.00, 4, 3, 'Sold');
+(1000, 1000, 1000, '2025-11-01 10:00:00', 1, 750.00, 1002, 1000, 'Sold'),
+(1001, 1000, 1001, '2025-11-02 09:30:00', 1, 750.00, 1002, 1000, 'Sold'),
+(1003, 1001, 1002, '2025-11-15 11:15:00', 1, 1200.00, 1003, 1002, 'Sold');
 
 -- Ticket Refund Audit
 INSERT INTO ticket_refund_audit (seat_and_ticket_rec_id, refund_amount, reason, processed_by)
 VALUES
-(3, 1200.00, 'Customer requested refund before event start.', 'Ticketing Desk Supervisor');
+(1002, 1200.00, 'Bad Service!', 'Ticketing Desk Supervisor');
 
 -- Event Personnel
 INSERT INTO event_personnel (personnel_first_name, personnel_last_name, availability_status, role, affiliation, contact_no, event_id, match_id)
 VALUES
-('Mariel', 'Flores', 'Confirmed', 'Usher', 'Mall of Asia Arena Events', '0917-000-1111', 1, 1),
-('Paolo', 'Reyes', 'Confirmed', 'Referee', 'UAAP Officials Pool', '0917-000-2222', 2, 3),
-('Angela', 'Santos', 'Confirmed', 'Host', 'Smart Communications', '0917-000-3333', 3, 4);
+('Mariel', 'Flores', 'Confirmed', 'Usher', 'Mall of Asia Arena Events', '0917-000-1111', 1000, 1000),
+('Paolo', 'Reyes', 'Confirmed', 'Referee', 'UAAP Officials Pool', '0917-000-2222', 1001, 1002),
+('Angela', 'Santos', 'Confirmed', 'Host', 'Smart Communications', '0917-000-3333', 1002, 1003);
+

@@ -220,7 +220,7 @@ public class TicketingService {
 
     private Match fetchMatch(Connection conn, int matchId, boolean forUpdate) throws SQLException {
         String sql = "SELECT m.match_id, m.event_id, e.event_name, m.match_type, " +
-t                "m.match_date, m.match_time_start, m.match_time_end, m.status, m.score_summary " +
+                "m.match_date, m.match_time_start, m.match_time_end, m.status, m.score_summary " +
                 "FROM `match` m INNER JOIN event e ON m.event_id = e.event_id " +
                 "WHERE m.match_id = ? " + (forUpdate ? "FOR UPDATE" : "");
 
