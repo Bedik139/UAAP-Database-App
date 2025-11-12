@@ -1,6 +1,6 @@
 # UAAP Event Management System
 
-Replaces error-prone spreadsheets with a robust database system for:
+Replaces Excel spreadsheets with a database system for:
 - **Event & Match Scheduling** - Prevent double-booking with automated venue/time validation
 - **Ticket Management** - Real-time seat availability with transaction-safe booking
 - **Team & Player Tracking** - Live scores, standings, and individual statistics
