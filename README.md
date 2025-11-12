@@ -345,12 +345,8 @@ Two portals: **Manager** (full control) | **Customer** (ticket operations)
 - Use correct classpath separator (`;` Windows, `:` Unix)
 - Ensure all `.java` files are in project root
 - Check JDK version (11+)
-
-<<<<<<< HEAD
-## 📝 Default Ticket Tiers
 =======
 ## Default Ticket Tiers
->>>>>>> 1f98b35fc222a3abb27eb607daf2a573e7505180
 
 - **Ticket #1** - General Admission / Upper Box: ₱500
 - **Ticket #2** - Lower Box: ₱750  
@@ -359,10 +355,3 @@ Two portals: **Manager** (full control) | **Customer** (ticket operations)
 Prices are inherited from seat assignments and can be customized per venue/event.
 
 Ateneo, De La Salle, FEU, UP, UST, NU, UE, Adamson
-
----
-<<<<<<< HEAD
-
-**Built for CCINFOM S14-07 | Modern Java Swing + MySQL Database Management System**
-=======
->>>>>>> 1f98b35fc222a3abb27eb607daf2a573e7505180
