@@ -68,7 +68,7 @@ public class ScoreAggregationService {
     private Map<Integer, Integer> aggregateQuarterScores(int matchId) throws SQLException {
         Map<Integer, Integer> totals = new HashMap<>();
         for (MatchQuarterScore score : quarterScoreDAO.getScoresForMatch(matchId)) {
-            totals.merge(score.getTeamId(), score.getPoints(), Integer::sum);
+            totals.merge(score.getTeamId(), score.getQuarterPoints(), Integer::sum);
         }
         return totals;
     }
@@ -76,7 +76,7 @@ public class ScoreAggregationService {
     private Map<Integer, Integer> aggregateSetScores(int matchId) throws SQLException {
         Map<Integer, Integer> totals = new HashMap<>();
         for (MatchSetScore score : setScoreDAO.getScoresForMatch(matchId)) {
-            totals.merge(score.getTeamId(), score.getPoints(), Integer::sum);
+            totals.merge(score.getTeamId(), score.getSetPoints(), Integer::sum);
         }
         return totals;
     }

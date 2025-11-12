@@ -12,8 +12,8 @@ public class SeatAndTicketDAO {
 
     private static final String BASE_SELECT =
             "SELECT sat.seat_and_ticket_rec_id, sat.seat_id, sat.event_id, sat.customer_id, " +
-            "sat.sale_datetime, sat.price_sold, sat.ticket_id, sat.match_id, sat.sale_status, sat.refund_datetime, " +
-            "CONCAT('#', s.seat_id, ' ', s.seat_type, ' ', COALESCE(s.seat_section, '')) AS seat_label, " +
+            "sat.sale_datetime, sat.quantity, sat.unit_price, sat.total_price, sat.ticket_id, sat.match_id, sat.sale_status, " +
+            "CONCAT('#', s.seat_id, ' ', s.seat_type) AS seat_label, " +
             "e.event_name, CONCAT(c.customer_first_name, ' ', c.customer_last_name) AS customer_name, " +
             "CONCAT('#', t.ticket_id, ' ', COALESCE(t.price, t.default_price)) AS ticket_label, " +
             "CASE WHEN sat.match_id IS NULL THEN NULL " +
@@ -28,7 +28,7 @@ public class SeatAndTicketDAO {
 
     public void insertRecord(SeatAndTicket record) throws SQLException {
         String sql = "INSERT INTO seat_and_ticket " +
-                "(seat_id, event_id, customer_id, sale_datetime, price_sold, ticket_id, match_id, sale_status, refund_datetime) " +
+                "(seat_id, event_id, customer_id, sale_datetime, quantity, unit_price, ticket_id, match_id, sale_status) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = Database.getConnection();
@@ -101,7 +101,7 @@ public class SeatAndTicketDAO {
 
     public void updateRecord(SeatAndTicket record) throws SQLException {
         String sql = "UPDATE seat_and_ticket SET seat_id = ?, event_id = ?, customer_id = ?, " +
-                "sale_datetime = ?, price_sold = ?, ticket_id = ?, match_id = ?, sale_status = ?, refund_datetime = ? " +
+                "sale_datetime = ?, quantity = ?, unit_price = ?, ticket_id = ?, match_id = ?, sale_status = ? " +
                 "WHERE seat_and_ticket_rec_id = ?";
 
         try (Connection conn = Database.getConnection();
@@ -113,20 +113,14 @@ public class SeatAndTicketDAO {
         }
     }
 
-    public void updateSaleStatus(int recordId, String saleStatus, Timestamp refundTimestamp) throws SQLException {
-        String sql = "UPDATE seat_and_ticket SET sale_status = ?, refund_datetime = ? WHERE seat_and_ticket_rec_id = ?";
+    public void updateSaleStatus(int recordId, String saleStatus) throws SQLException {
+        String sql = "UPDATE seat_and_ticket SET sale_status = ? WHERE seat_and_ticket_rec_id = ?";
 
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, saleStatus);
-            if (refundTimestamp != null) {
-                ps.setTimestamp(2, refundTimestamp);
-            } else {
-                ps.setNull(2, Types.TIMESTAMP);
-            }
-            ps.setInt(3, recordId);
-
+            ps.setInt(2, recordId);
             ps.executeUpdate();
         }
     }
@@ -147,22 +141,17 @@ public class SeatAndTicketDAO {
         ps.setInt(2, record.getEventId());
         ps.setInt(3, record.getCustomerId());
         ps.setTimestamp(4, record.getSaleDatetime());
-        ps.setBigDecimal(5, record.getPriceSold());
-        ps.setInt(6, record.getTicketId());
+        ps.setInt(5, record.getQuantity());
+        ps.setBigDecimal(6, record.getUnitPrice());
+        ps.setInt(7, record.getTicketId());
 
         if (record.getMatchId() != null) {
-            ps.setInt(7, record.getMatchId());
+            ps.setInt(8, record.getMatchId());
         } else {
-            ps.setNull(7, Types.INTEGER);
+            ps.setNull(8, Types.INTEGER);
         }
 
-        ps.setString(8, record.getSaleStatus());
-
-        if (record.getRefundDatetime() != null) {
-            ps.setTimestamp(9, record.getRefundDatetime());
-        } else {
-            ps.setNull(9, Types.TIMESTAMP);
-        }
+        ps.setString(9, record.getSaleStatus());
     }
 
     private SeatAndTicket mapRow(ResultSet rs) throws SQLException {
@@ -172,11 +161,12 @@ public class SeatAndTicketDAO {
         record.setEventId(rs.getInt("event_id"));
         record.setCustomerId(rs.getInt("customer_id"));
         record.setSaleDatetime(rs.getTimestamp("sale_datetime"));
-        record.setPriceSold(rs.getBigDecimal("price_sold"));
+        record.setQuantity(rs.getInt("quantity"));
+        record.setUnitPrice(rs.getBigDecimal("unit_price"));
+        record.setTotalPrice(rs.getBigDecimal("total_price"));
         record.setTicketId(rs.getInt("ticket_id"));
         record.setMatchId((Integer) rs.getObject("match_id"));
         record.setSaleStatus(rs.getString("sale_status"));
-        record.setRefundDatetime(rs.getTimestamp("refund_datetime"));
         record.setSeatLabel(rs.getString("seat_label"));
         record.setEventName(rs.getString("event_name"));
         record.setCustomerName(rs.getString("customer_name"));

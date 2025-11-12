@@ -43,6 +43,10 @@ public class Ticket {
         this.price = price;
     }
 
+    public BigDecimal getEffectivePrice() {
+        return price != null ? price : defaultPrice;
+    }
+
     public String getStatus() {
         return status;
     }
@@ -53,7 +57,7 @@ public class Ticket {
 
     @Override
     public String toString() {
-        BigDecimal effective = price != null ? price : defaultPrice;
+        BigDecimal effective = getEffectivePrice();
         return String.format("#%d %s (%s)", ticketId, effective, status);
     }
 }

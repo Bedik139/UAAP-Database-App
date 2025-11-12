@@ -1,23 +1,25 @@
+import java.math.BigDecimal;
+
 public class Seat {
 
     private int seatId;
     private String seatType;
-    private String seatSection;
     private String venueAddress;
     private String seatStatus;
+    private Ticket ticketTier;
 
     public Seat() {}
 
     public Seat(int seatId,
                 String seatType,
-                String seatSection,
                 String venueAddress,
-                String seatStatus) {
+                String seatStatus,
+                Ticket ticketTier) {
         this.seatId = seatId;
         this.seatType = seatType;
-        this.seatSection = seatSection;
         this.venueAddress = venueAddress;
         this.seatStatus = seatStatus;
+        this.ticketTier = ticketTier;
     }
 
     public int getSeatId() {
@@ -34,14 +36,6 @@ public class Seat {
 
     public void setSeatType(String seatType) {
         this.seatType = seatType;
-    }
-
-    public String getSeatSection() {
-        return seatSection;
-    }
-
-    public void setSeatSection(String seatSection) {
-        this.seatSection = seatSection;
     }
 
     public String getVenueAddress() {
@@ -64,12 +58,30 @@ public class Seat {
         return "Available".equalsIgnoreCase(seatStatus);
     }
 
+    public Ticket getTicketTier() {
+        return ticketTier;
+    }
+
+    public void setTicketTier(Ticket ticketTier) {
+        this.ticketTier = ticketTier;
+    }
+
+    public int getTicketId() {
+        return ticketTier != null ? ticketTier.getTicketId() : 0;
+    }
+
+    public BigDecimal getTicketPrice() {
+        return ticketTier != null ? ticketTier.getEffectivePrice() : null;
+    }
+
     @Override
     public String toString() {
-        String sectionLabel = seatSection != null && !seatSection.isEmpty()
-                ? " " + seatSection
-                : "";
         String venueLabel = venueAddress != null ? " @ " + venueAddress : "";
-        return String.format("#%d %s%s%s [%s]", seatId, seatType, sectionLabel, venueLabel, seatStatus);
+        String priceLabel = "";
+        BigDecimal price = getTicketPrice();
+        if (price != null) {
+            priceLabel = String.format(" PHP %s", price.stripTrailingZeros().toPlainString());
+        }
+        return String.format("#%d %s%s [%s]%s", seatId, seatType, venueLabel, seatStatus, priceLabel);
     }
 }

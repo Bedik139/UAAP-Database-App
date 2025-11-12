@@ -44,17 +44,28 @@ public class TeamManagerPanel extends JPanel {
         idField = new JTextField();
         idField.setEditable(false);
         idField.setToolTipText("Auto-filled when you select a team.");
+        UAAPTheme.styleTextField(idField);
+        
         nameField = new JComboBox<>(TeamDAO.getAllowedTeamNames().toArray(new String[0]));
         nameField.setToolTipText("Select the official UAAP team name.");
+        UAAPTheme.styleComboBox(nameField);
+        
         seasonsField = new JTextField("0");
         seasonsField.setToolTipText("Total seasons the team has played.");
+        UAAPTheme.styleTextField(seasonsField);
+        
         winsField = new JTextField("0");
         winsField.setToolTipText("Wins recorded for the current season.");
+        UAAPTheme.styleTextField(winsField);
+        
         lossesField = new JTextField("0");
         lossesField.setToolTipText("Losses recorded for the current season.");
+        UAAPTheme.styleTextField(lossesField);
+        
         totalGamesField = new JTextField();
         totalGamesField.setEditable(false);
         totalGamesField.setToolTipText("Calculated automatically as wins + losses.");
+        UAAPTheme.styleTextField(totalGamesField);
 
         JPanel formPanel = buildFormPanel();
         add(formPanel, BorderLayout.NORTH);
@@ -79,6 +90,7 @@ public class TeamManagerPanel extends JPanel {
         };
 
         table = new JTable(tableModel);
+        UAAPTheme.styleTable(table);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             @Override public void valueChanged(ListSelectionEvent e) {
@@ -104,6 +116,12 @@ public class TeamManagerPanel extends JPanel {
         deleteButton = new JButton("Delete");
         clearButton = new JButton("Clear Form");
         refreshButton = new JButton("Refresh");
+
+        UAAPTheme.styleActionButton(addButton);
+        UAAPTheme.styleActionButton(updateButton);
+        UAAPTheme.styleDangerButton(deleteButton);
+        UAAPTheme.styleNeutralButton(clearButton);
+        UAAPTheme.styleInfoButton(refreshButton);
 
         buttonPanel.add(addButton);
         buttonPanel.add(updateButton);

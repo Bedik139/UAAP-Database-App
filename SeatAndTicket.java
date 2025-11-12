@@ -8,11 +8,12 @@ public class SeatAndTicket {
     private int eventId;
     private int customerId;
     private Timestamp saleDatetime;
-    private BigDecimal priceSold;
+    private int quantity;
+    private BigDecimal unitPrice;
+    private BigDecimal totalPrice;
     private int ticketId;
     private Integer matchId;
     private String saleStatus;
-    private Timestamp refundDatetime;
 
     private String seatLabel;
     private String eventName;
@@ -27,11 +28,12 @@ public class SeatAndTicket {
                          int eventId,
                          int customerId,
                          Timestamp saleDatetime,
-                         BigDecimal priceSold,
+                         int quantity,
+                         BigDecimal unitPrice,
+                         BigDecimal totalPrice,
                          int ticketId,
                          Integer matchId,
                          String saleStatus,
-                         Timestamp refundDatetime,
                          String seatLabel,
                          String eventName,
                          String customerName,
@@ -42,11 +44,12 @@ public class SeatAndTicket {
         this.eventId = eventId;
         this.customerId = customerId;
         this.saleDatetime = saleDatetime;
-        this.priceSold = priceSold;
+        this.quantity = quantity;
+        this.unitPrice = unitPrice;
+        this.totalPrice = totalPrice;
         this.ticketId = ticketId;
         this.matchId = matchId;
         this.saleStatus = saleStatus;
-        this.refundDatetime = refundDatetime;
         this.seatLabel = seatLabel;
         this.eventName = eventName;
         this.customerName = customerName;
@@ -58,12 +61,15 @@ public class SeatAndTicket {
                          int eventId,
                          int customerId,
                          Timestamp saleDatetime,
-                         BigDecimal priceSold,
+                         int quantity,
+                         BigDecimal unitPrice,
                          int ticketId,
                          Integer matchId,
                          String saleStatus) {
-        this(0, seatId, eventId, customerId, saleDatetime, priceSold, ticketId, matchId,
-                saleStatus, null, null, null, null, null, null);
+        this(0, seatId, eventId, customerId, saleDatetime, quantity, unitPrice,
+                unitPrice.multiply(BigDecimal.valueOf(quantity)),
+                ticketId, matchId,
+                saleStatus, null, null, null, null, null);
     }
 
     public int getRecordId() {
@@ -106,12 +112,28 @@ public class SeatAndTicket {
         this.saleDatetime = saleDatetime;
     }
 
-    public BigDecimal getPriceSold() {
-        return priceSold;
+    public int getQuantity() {
+        return quantity;
     }
 
-    public void setPriceSold(BigDecimal priceSold) {
-        this.priceSold = priceSold;
+    public void setQuantity(int quantity) {
+        this.quantity = quantity;
+    }
+
+    public BigDecimal getUnitPrice() {
+        return unitPrice;
+    }
+
+    public void setUnitPrice(BigDecimal unitPrice) {
+        this.unitPrice = unitPrice;
+    }
+
+    public BigDecimal getTotalPrice() {
+        return totalPrice;
+    }
+
+    public void setTotalPrice(BigDecimal totalPrice) {
+        this.totalPrice = totalPrice;
     }
 
     public int getTicketId() {
@@ -136,14 +158,6 @@ public class SeatAndTicket {
 
     public void setSaleStatus(String saleStatus) {
         this.saleStatus = saleStatus;
-    }
-
-    public Timestamp getRefundDatetime() {
-        return refundDatetime;
-    }
-
-    public void setRefundDatetime(Timestamp refundDatetime) {
-        this.refundDatetime = refundDatetime;
     }
 
     public String getSeatLabel() {

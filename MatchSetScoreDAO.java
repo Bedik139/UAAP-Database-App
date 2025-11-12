@@ -8,7 +8,7 @@ import java.util.List;
 public class MatchSetScoreDAO {
 
     public void insertScore(MatchSetScore score) throws SQLException {
-        String sql = "INSERT INTO match_set_score (match_id, team_id, set_no, points) " +
+        String sql = "INSERT INTO match_set_score (match_id, team_id, set_no, set_points) " +
                 "VALUES (?, ?, ?, ?)";
 
         try (Connection conn = Database.getConnection();
@@ -22,7 +22,7 @@ public class MatchSetScoreDAO {
     public List<MatchSetScore> getScoresForMatch(int matchId) throws SQLException {
         List<MatchSetScore> list = new ArrayList<>();
 
-        String sql = "SELECT mss.match_id, mss.team_id, mss.set_no, mss.points, " +
+        String sql = "SELECT mss.match_id, mss.team_id, mss.set_no, mss.set_points, " +
                 "CONCAT('#', m.match_id, ' ', e.event_name, ' (', m.match_type, ')') AS match_label, " +
                 "t.team_name " +
                 "FROM match_set_score mss " +
@@ -43,7 +43,7 @@ public class MatchSetScoreDAO {
                             rs.getInt("match_id"),
                             rs.getInt("team_id"),
                             rs.getInt("set_no"),
-                            rs.getInt("points"),
+                            rs.getInt("set_points"),
                             rs.getString("match_label"),
                             rs.getString("team_name")
                     );
@@ -59,7 +59,7 @@ public class MatchSetScoreDAO {
                             int originalMatchId,
                             int originalTeamId,
                             int originalSetNo) throws SQLException {
-        String sql = "UPDATE match_set_score SET match_id = ?, team_id = ?, set_no = ?, points = ? " +
+        String sql = "UPDATE match_set_score SET match_id = ?, team_id = ?, set_no = ?, set_points = ? " +
                 "WHERE match_id = ? AND team_id = ? AND set_no = ?";
 
         try (Connection conn = Database.getConnection();
@@ -90,6 +90,6 @@ public class MatchSetScoreDAO {
         ps.setInt(1, score.getMatchId());
         ps.setInt(2, score.getTeamId());
         ps.setInt(3, score.getSetNo());
-        ps.setInt(4, score.getPoints());
+        ps.setInt(4, score.getSetPoints());
     }
 }

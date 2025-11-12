@@ -60,21 +60,37 @@ public class EventManagerPanel extends JPanel {
         idField = new JTextField();
         idField.setEditable(false);
         idField.setToolTipText("Auto-filled when you select an event.");
+        UAAPTheme.styleTextField(idField);
 
         nameField = new JTextField();
+        UAAPTheme.styleTextField(nameField);
+        
         sportField = new JComboBox<>(SPORT_OPTIONS);
+        UAAPTheme.styleComboBox(sportField);
+        
         dateField = new JTextField();
         dateField.setToolTipText("Format: yyyy-mm-dd");
+        UAAPTheme.styleTextField(dateField);
+        
         startField = new JTextField();
         startField.setToolTipText("Format: HH:MM:SS");
+        UAAPTheme.styleTextField(startField);
+        
         endField = new JTextField();
         endField.setToolTipText("Format: HH:MM:SS");
+        UAAPTheme.styleTextField(endField);
+        
         venueCombo = new JComboBox<>(Venue.values());
+        UAAPTheme.styleComboBox(venueCombo);
+        venueCombo.addActionListener(e -> autoFillCapacity());
+        
         capacityField = new JTextField();
         capacityField.setEditable(false);
         capacityField.setToolTipText("Auto-filled based on venue selection.");
+        UAAPTheme.styleTextField(capacityField);
+        
         statusField = new JComboBox<>(STATUS_OPTIONS);
-        venueCombo.addActionListener(e -> autoFillCapacity());
+        UAAPTheme.styleComboBox(statusField);
 
         add(buildFormPanel(), BorderLayout.NORTH);
         autoFillCapacity();
@@ -128,6 +144,7 @@ public class EventManagerPanel extends JPanel {
         };
 
         table = new JTable(tableModel);
+        UAAPTheme.styleTable(table);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             @Override public void valueChanged(ListSelectionEvent e) {
@@ -140,17 +157,26 @@ public class EventManagerPanel extends JPanel {
             }
         });
 
-        add(new JScrollPane(table), BorderLayout.CENTER);
+        JScrollPane scrollPane = new JScrollPane(table);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
+        add(scrollPane, BorderLayout.CENTER);
     }
 
     private void initButtons() {
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 10));
+        buttonPanel.setOpaque(false);
 
-        addButton = new JButton("Add");
-        updateButton = new JButton("Update");
-        deleteButton = new JButton("Delete");
+        addButton = new JButton("Add Event");
+        updateButton = new JButton("Update Event");
+        deleteButton = new JButton("Delete Event");
         clearButton = new JButton("Clear Form");
         refreshButton = new JButton("Refresh");
+
+        UAAPTheme.styleActionButton(addButton);
+        UAAPTheme.styleInfoButton(updateButton);
+        UAAPTheme.styleDangerButton(deleteButton);
+        UAAPTheme.styleNeutralButton(clearButton);
+        UAAPTheme.styleInfoButton(refreshButton);
 
         addButton.addActionListener(e -> handleAdd());
         updateButton.addActionListener(e -> handleUpdate());
@@ -158,11 +184,11 @@ public class EventManagerPanel extends JPanel {
         clearButton.addActionListener(e -> clearForm());
         refreshButton.addActionListener(e -> reloadTable());
 
+        buttonPanel.add(refreshButton);
+        buttonPanel.add(clearButton);
         buttonPanel.add(addButton);
         buttonPanel.add(updateButton);
         buttonPanel.add(deleteButton);
-        buttonPanel.add(clearButton);
-        buttonPanel.add(refreshButton);
 
         add(buttonPanel, BorderLayout.SOUTH);
     }

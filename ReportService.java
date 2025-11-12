@@ -1,4 +1,5 @@
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -7,7 +8,6 @@ import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.math.RoundingMode;
 
 public class ReportService {
 
@@ -39,8 +39,8 @@ public class ReportService {
     public List<TicketSalesRow> getTicketSalesSummary(LocalDate start, LocalDate end) throws SQLException {
         StringBuilder sql = new StringBuilder();
         sql.append("SELECT e.event_id, e.event_name, e.sport, e.match_date, ")
-           .append("sat.match_id, COUNT(CASE WHEN sat.sale_status = 'Sold' THEN 1 END) AS tickets_sold, ")
-           .append("SUM(CASE WHEN sat.sale_status = 'Sold' THEN sat.price_sold ELSE 0 END) AS revenue, ")
+           .append("sat.match_id, SUM(CASE WHEN sat.sale_status = 'Sold' THEN sat.quantity ELSE 0 END) AS tickets_sold, ")
+           .append("SUM(CASE WHEN sat.sale_status = 'Sold' THEN sat.total_price ELSE 0 END) AS revenue, ")
            .append("DATE(sat.sale_datetime) AS sale_day ")
            .append("FROM event e ")
            .append("LEFT JOIN seat_and_ticket sat ON sat.event_id = e.event_id ");
@@ -90,7 +90,7 @@ public class ReportService {
     public List<VenueUtilizationRow> getVenueUtilization(LocalDate forMonth) throws SQLException {
         StringBuilder sql = new StringBuilder();
         sql.append("SELECT e.event_id, e.event_name, e.venue_address, e.match_date, ")
-           .append("COUNT(CASE WHEN sat.sale_status = 'Sold' THEN 1 END) AS seats_sold, ")
+           .append("SUM(CASE WHEN sat.sale_status = 'Sold' THEN sat.quantity ELSE 0 END) AS seats_sold, ")
            .append("e.venue_capacity AS total_seats ")
            .append("FROM event e ")
            .append("LEFT JOIN seat_and_ticket sat ON sat.event_id = e.event_id AND sat.sale_status = 'Sold' ");
@@ -143,8 +143,8 @@ public class ReportService {
     public List<TicketRevenueRow> getTicketRevenueSummary(LocalDate start, LocalDate end) throws SQLException {
         StringBuilder sql = new StringBuilder();
         sql.append("SELECT e.event_id, e.event_name, sat.match_id, s.seat_type, ")
-           .append("SUM(CASE WHEN sat.sale_status = 'Sold' THEN sat.price_sold ELSE 0 END) AS revenue, ")
-           .append("COUNT(CASE WHEN sat.sale_status = 'Sold' THEN 1 END) AS tickets_sold ")
+           .append("SUM(CASE WHEN sat.sale_status = 'Sold' THEN sat.total_price ELSE 0 END) AS revenue, ")
+           .append("SUM(CASE WHEN sat.sale_status = 'Sold' THEN sat.quantity ELSE 0 END) AS tickets_sold ")
            .append("FROM seat_and_ticket sat ")
            .append("INNER JOIN event e ON sat.event_id = e.event_id ")
            .append("INNER JOIN seat s ON sat.seat_id = s.seat_id ");
@@ -194,8 +194,9 @@ public class ReportService {
 
     public List<PlayerParticipationRow> getPlayerParticipationStats() throws SQLException {
         String sql = "SELECT p.player_id, p.player_first_name, p.player_last_name, t.team_name, " +
-                "p.position, p.individual_score " +
-                "FROM player p INNER JOIN team t ON p.team_id = t.team_id " +
+                "p.position, p.individual_score AS total_points, p.player_sport AS sport " +
+                "FROM player p " +
+                "INNER JOIN team t ON p.team_id = t.team_id " +
                 "ORDER BY p.individual_score DESC, p.player_last_name";
 
         List<PlayerParticipationRow> rows = new ArrayList<>();
@@ -210,7 +211,8 @@ public class ReportService {
                         rs.getString("player_last_name"),
                         rs.getString("team_name"),
                         rs.getString("position"),
-                        rs.getInt("individual_score")
+                        rs.getInt("total_points"),
+                        rs.getString("sport")
                 ));
             }
         }
@@ -253,5 +255,6 @@ public class ReportService {
                                          String lastName,
                                          String teamName,
                                          String position,
-                                         int totalPoints) {}
+                                         int totalPoints,
+                                         String sport) {}
 }

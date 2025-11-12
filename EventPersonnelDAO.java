@@ -17,6 +17,7 @@ public class EventPersonnelDAO {
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
+            requireMatchSelected(personnel.getMatchId());
             ensureMatchAlignment(conn, personnel.getMatchId(), personnel.getEventId());
             bindPersonnel(ps, personnel);
             ps.executeUpdate();
@@ -76,6 +77,7 @@ public class EventPersonnelDAO {
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
+            requireMatchSelected(personnel.getMatchId());
             ensureMatchAlignment(conn, personnel.getMatchId(), personnel.getEventId());
             bindPersonnel(ps, personnel);
             ps.setInt(9, personnel.getPersonnelId());
@@ -108,18 +110,10 @@ public class EventPersonnelDAO {
         }
 
         ps.setInt(7, personnel.getEventId());
-
-        if (personnel.getMatchId() != null) {
-            ps.setInt(8, personnel.getMatchId());
-        } else {
-            ps.setNull(8, Types.INTEGER);
-        }
+        ps.setInt(8, personnel.getMatchId());
     }
 
     private void ensureMatchAlignment(Connection conn, Integer matchId, int eventId) throws SQLException {
-        if (matchId == null) {
-            return;
-        }
         try (PreparedStatement ps = conn.prepareStatement(
                 "SELECT event_id FROM `match` WHERE match_id = ?")) {
             ps.setInt(1, matchId);
@@ -132,6 +126,12 @@ public class EventPersonnelDAO {
                     throw new IllegalArgumentException("Match must belong to the same event as the personnel assignment.");
                 }
             }
+        }
+    }
+
+    private void requireMatchSelected(Integer matchId) {
+        if (matchId == null) {
+            throw new IllegalArgumentException("Match selection is required for event personnel.");
         }
     }
 }

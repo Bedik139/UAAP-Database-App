@@ -1,16 +1,3 @@
-import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.DefaultComboBoxModel;
-import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JComponent;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
@@ -22,6 +9,21 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.util.List;
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.ComboBoxModel;
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.DefaultListCellRenderer;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
 
 public class TicketPurchasePanel extends JPanel {
 
@@ -31,6 +33,7 @@ public class TicketPurchasePanel extends JPanel {
     private final TicketDAO ticketDAO = new TicketDAO();
     private final CustomerDAO customerDAO = new CustomerDAO();
     private final TicketingService ticketingService = new TicketingService();
+    private final TeamDAO teamDAO = new TeamDAO();
 
     private JComboBox<Event> eventCombo;
     private JComboBox<Match> matchCombo;
@@ -38,7 +41,8 @@ public class TicketPurchasePanel extends JPanel {
     private JComboBox<Ticket> ticketCombo;
     private JComboBox<Customer> customerCombo;
 
-    private JTextField priceField;
+    private JTextField quantityField;
+    private JTextField unitPriceField;
     private JTextField saleDateTimeField;
 
     private JTextField firstNameField;
@@ -46,7 +50,7 @@ public class TicketPurchasePanel extends JPanel {
     private JTextField emailField;
     private JTextField phoneField;
     private JTextField organizationField;
-    private JComboBox<String> preferredSportCombo;
+    private JComboBox<Object> preferredTeamCombo;
     private JTextField paymentMethodField;
 
     private JTextArea confirmationArea;
@@ -77,26 +81,44 @@ public class TicketPurchasePanel extends JPanel {
     private JPanel buildSelectionPanel() {
         JPanel panel = new JPanel(new GridBagLayout());
         panel.setBorder(BorderFactory.createTitledBorder("Ticket Selection"));
+        panel.setBackground(UAAPTheme.CARD_BACKGROUND);
 
         eventCombo = new JComboBox<>();
+        UAAPTheme.styleComboBox(eventCombo);
         eventCombo.addActionListener(e -> refreshMatchesAndSeats());
 
         matchCombo = new JComboBox<>();
+        UAAPTheme.styleComboBox(matchCombo);
 
         seatCombo = new JComboBox<>();
+        UAAPTheme.styleComboBox(seatCombo);
+        seatCombo.addActionListener(e -> syncSeatTicketSelection());
+        
         ticketCombo = new JComboBox<>();
-        ticketCombo.addActionListener(e -> applyTicketPrice());
+        UAAPTheme.styleComboBox(ticketCombo);
+        ticketCombo.setEnabled(false);
+        ticketCombo.setToolTipText("Ticket tier is derived from the selected seat.");
 
-        priceField = new JTextField(10);
+        quantityField = new JTextField("1");
+        quantityField.setToolTipText("Customers may purchase between 1 and 2 seats per transaction.");
+        UAAPTheme.styleTextField(quantityField);
+        
+        unitPriceField = new JTextField(10);
+        unitPriceField.setEditable(false);
+        unitPriceField.setToolTipText("Read-only seat price from the linked ticket.");
+        UAAPTheme.styleTextField(unitPriceField);
+        
         saleDateTimeField = new JTextField(16);
         saleDateTimeField.setToolTipText("Optional override (YYYY-MM-DD HH:MM:SS). Leave blank for current time.");
+        UAAPTheme.styleTextField(saleDateTimeField);
 
         addFormField(panel, 0, "Event", eventCombo);
         addFormField(panel, 1, "Match (Scheduled)", matchCombo);
         addFormField(panel, 2, "Available Seat", seatCombo);
-        addFormField(panel, 3, "Ticket Type", ticketCombo);
-        addFormField(panel, 4, "Sale Price", priceField);
-        addFormField(panel, 5, "Sale Timestamp", saleDateTimeField);
+        addFormField(panel, 3, "Ticket Tier", ticketCombo);
+        addFormField(panel, 4, "Seat Price", unitPriceField);
+        addFormField(panel, 5, "Quantity", quantityField);
+        addFormField(panel, 6, "Sale Timestamp", saleDateTimeField);
 
         panel.setAlignmentX(LEFT_ALIGNMENT);
         return panel;
@@ -105,18 +127,51 @@ public class TicketPurchasePanel extends JPanel {
     private JPanel buildCustomerPanel() {
         JPanel panel = new JPanel(new GridBagLayout());
         panel.setBorder(BorderFactory.createTitledBorder("Customer Details"));
+        panel.setBackground(UAAPTheme.CARD_BACKGROUND);
         panel.setAlignmentX(LEFT_ALIGNMENT);
 
         customerCombo = new JComboBox<>();
+        UAAPTheme.styleComboBox(customerCombo);
         customerCombo.addActionListener(e -> toggleCustomerFields());
 
         firstNameField = new JTextField(15);
+        UAAPTheme.styleTextField(firstNameField);
+        
         lastNameField = new JTextField(15);
+        UAAPTheme.styleTextField(lastNameField);
+        
         emailField = new JTextField(20);
+        UAAPTheme.styleTextField(emailField);
+        
         phoneField = new JTextField(15);
+        UAAPTheme.styleTextField(phoneField);
+        
         organizationField = new JTextField(20);
-        preferredSportCombo = new JComboBox<>(new String[]{"Basketball", "Volleyball", "None"});
+        UAAPTheme.styleTextField(organizationField);
+        
+        preferredTeamCombo = new JComboBox<>();
+        UAAPTheme.styleComboBox(preferredTeamCombo);
+        preferredTeamCombo.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public java.awt.Component getListCellRendererComponent(javax.swing.JList<?> list,
+                                                                   Object value,
+                                                                   int index,
+                                                                   boolean isSelected,
+                                                                   boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value instanceof Team) {
+                    setText(((Team) value).getTeamName());
+                } else if (value == null) {
+                    setText("None");
+                } else {
+                    setText(value.toString());
+                }
+                return this;
+            }
+        });
+        
         paymentMethodField = new JTextField(15);
+        UAAPTheme.styleTextField(paymentMethodField);
 
         addFormField(panel, 0, "Existing Customer (optional)", customerCombo);
         addFormField(panel, 1, "First Name", firstNameField);
@@ -124,7 +179,7 @@ public class TicketPurchasePanel extends JPanel {
         addFormField(panel, 2, "Email", emailField);
         addFormField(panel, 2, "Phone", phoneField, 1);
         addFormField(panel, 3, "Organization", organizationField);
-        addFormField(panel, 3, "Preferred Sport", preferredSportCombo, 1);
+        addFormField(panel, 3, "Preferred Team", preferredTeamCombo, 1);
         addFormField(panel, 4, "Payment Method", paymentMethodField);
 
         return panel;
@@ -135,11 +190,16 @@ public class TicketPurchasePanel extends JPanel {
         JButton clearButton = new JButton("Clear Form");
         JButton reloadButton = new JButton("Reload Data");
 
+        UAAPTheme.styleActionButton(purchaseButton);
+        UAAPTheme.styleNeutralButton(clearButton);
+        UAAPTheme.styleInfoButton(reloadButton);
+
         purchaseButton.addActionListener(e -> handlePurchase());
         clearButton.addActionListener(e -> clearForm());
         reloadButton.addActionListener(e -> reloadAllData());
 
-        JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 10));
+        actionPanel.setOpaque(false);
         actionPanel.add(reloadButton);
         actionPanel.add(clearButton);
         actionPanel.add(purchaseButton);
@@ -148,9 +208,21 @@ public class TicketPurchasePanel extends JPanel {
         confirmationArea.setEditable(false);
         confirmationArea.setLineWrap(true);
         confirmationArea.setWrapStyleWord(true);
-        confirmationArea.setBorder(BorderFactory.createTitledBorder("Last Transaction"));
+        confirmationArea.setFont(UAAPTheme.LABEL_FONT);
+        confirmationArea.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createTitledBorder(
+                BorderFactory.createLineBorder(UAAPTheme.CARD_BORDER, 1),
+                "Last Transaction",
+                javax.swing.border.TitledBorder.LEFT,
+                javax.swing.border.TitledBorder.TOP,
+                new java.awt.Font("Segoe UI Semibold", java.awt.Font.PLAIN, 14),
+                UAAPTheme.TEXT_PRIMARY
+            ),
+            BorderFactory.createEmptyBorder(8, 8, 8, 8)
+        ));
 
         JPanel panel = new JPanel(new BorderLayout());
+        panel.setOpaque(false);
         panel.add(actionPanel, BorderLayout.NORTH);
         panel.add(new JScrollPane(confirmationArea), BorderLayout.CENTER);
         return panel;
@@ -180,9 +252,10 @@ public class TicketPurchasePanel extends JPanel {
     private void reloadAllData() {
         reloadEvents();
         reloadTickets();
+        reloadTeamOptions();
         reloadCustomers();
         refreshMatchesAndSeats();
-        applyTicketPrice();
+        applyDefaultQuantity();
         toggleCustomerFields();
         confirmationArea.setText("");
     }
@@ -213,7 +286,6 @@ public class TicketPurchasePanel extends JPanel {
         if (event != null) {
             try {
                 List<Match> matches = matchDAO.getAllMatches();
-                matchModel.addElement(null);
                 for (Match match : matches) {
                     if (match.getEventId() == event.getEventId() && "Scheduled".equalsIgnoreCase(match.getStatus())) {
                         matchModel.addElement(match);
@@ -224,7 +296,7 @@ public class TicketPurchasePanel extends JPanel {
             }
 
             try {
-                for (Seat seat : seatDAO.getAvailableSeatsForEvent(event.getEventId())) {
+                for (Seat seat : seatDAO.getAvailableSeatsForEvent(event.getEventId(), event.getVenueAddress())) {
                     seatModel.addElement(seat);
                 }
             } catch (SQLException ex) {
@@ -233,8 +305,10 @@ public class TicketPurchasePanel extends JPanel {
         }
 
         matchCombo.setModel(matchModel);
-        matchCombo.setSelectedIndex(0);
+        matchCombo.setSelectedIndex(matchModel.getSize() > 0 ? 0 : -1);
         seatCombo.setModel(seatModel);
+        applyDefaultQuantity();
+        syncSeatTicketSelection();
     }
 
     private void reloadTickets() {
@@ -268,12 +342,22 @@ public class TicketPurchasePanel extends JPanel {
         }
     }
 
-    private void applyTicketPrice() {
-        Ticket ticket = (Ticket) ticketCombo.getSelectedItem();
-        if (ticket != null) {
-            BigDecimal price = ticket.getPrice() != null ? ticket.getPrice() : ticket.getDefaultPrice();
-            priceField.setText(price.toPlainString());
+    private void reloadTeamOptions() {
+        DefaultComboBoxModel<Object> model = new DefaultComboBoxModel<>();
+        model.addElement("None");
+        try {
+            for (Team team : teamDAO.getAllTeams()) {
+                model.addElement(team);
+            }
+        } catch (SQLException ex) {
+            showError("Unable to load teams:\n" + ex.getMessage());
         }
+        preferredTeamCombo.setModel(model);
+        preferredTeamCombo.setSelectedIndex(0);
+    }
+
+    private void applyDefaultQuantity() {
+        quantityField.setText("1");
     }
 
     private void toggleCustomerFields() {
@@ -284,7 +368,7 @@ public class TicketPurchasePanel extends JPanel {
         emailField.setEnabled(isNew);
         phoneField.setEnabled(isNew);
         organizationField.setEnabled(isNew);
-        preferredSportCombo.setEnabled(isNew);
+        preferredTeamCombo.setEnabled(isNew);
         paymentMethodField.setEnabled(true);
 
         if (!isNew && existing != null) {
@@ -293,7 +377,7 @@ public class TicketPurchasePanel extends JPanel {
             emailField.setText(existing.getEmail());
             phoneField.setText(existing.getPhoneNumber());
             organizationField.setText(existing.getOrganization());
-            preferredSportCombo.setSelectedItem(existing.getPreferredSport() != null ? existing.getPreferredSport() : "None");
+            selectPreferredTeam(existing.getPreferredTeam());
             paymentMethodField.setText(existing.getPaymentMethod() != null ? existing.getPaymentMethod() : "");
         } else {
             firstNameField.setText("");
@@ -301,34 +385,61 @@ public class TicketPurchasePanel extends JPanel {
             emailField.setText("");
             phoneField.setText("");
             organizationField.setText("");
-            preferredSportCombo.setSelectedIndex(0);
+            preferredTeamCombo.setSelectedIndex(0);
             paymentMethodField.setText("");
         }
+    }
+
+    private void selectPreferredTeam(String teamName) {
+        if (teamName == null || teamName.isBlank()) {
+            preferredTeamCombo.setSelectedIndex(0);
+            return;
+        }
+        for (int i = 0; i < preferredTeamCombo.getItemCount(); i++) {
+            Object item = preferredTeamCombo.getItemAt(i);
+            if (item instanceof Team && teamName.equals(((Team) item).getTeamName())) {
+                preferredTeamCombo.setSelectedIndex(i);
+                return;
+            }
+        }
+        preferredTeamCombo.setSelectedIndex(0);
+    }
+
+    private String resolvePreferredTeamSelection() {
+        Object selection = preferredTeamCombo.getSelectedItem();
+        if (selection instanceof Team) {
+            return ((Team) selection).getTeamName();
+        }
+        return null;
     }
 
     private void handlePurchase() {
         Event event = (Event) eventCombo.getSelectedItem();
         Seat seat = (Seat) seatCombo.getSelectedItem();
-        Ticket ticket = (Ticket) ticketCombo.getSelectedItem();
-
-        if (event == null || seat == null || ticket == null) {
-            showError("Event, seat, and ticket selections are required.");
+        if (event == null || seat == null) {
+            showError("Event and seat selections are required.");
             return;
         }
 
         try {
             Match selectedMatch = (Match) matchCombo.getSelectedItem();
-            BigDecimal price = new BigDecimal(priceField.getText().trim());
-            if (price.signum() < 0) {
-                throw new IllegalArgumentException("Price must be zero or greater.");
+            if (selectedMatch == null) {
+                showError("Select a match for this ticket.");
+                return;
             }
+            Ticket seatTicket = seat.getTicketTier();
+            if (seatTicket == null) {
+                showError("Selected seat is not linked to a ticket tier.");
+                return;
+            }
+            int quantity = parseQuantity(quantityField);
 
             TicketingService.TicketPurchaseRequest request = new TicketingService.TicketPurchaseRequest();
             request.setEventId(event.getEventId());
-            request.setMatchId(selectedMatch != null ? selectedMatch.getMatchId() : null);
+            request.setMatchId(selectedMatch.getMatchId());
             request.setSeatId(seat.getSeatId());
-            request.setTicketId(ticket.getTicketId());
-            request.setPriceOverride(price);
+            request.setTicketId(seatTicket.getTicketId());
+            request.setQuantity(quantity);
 
             String saleText = saleDateTimeField.getText().trim();
             if (!saleText.isEmpty()) {
@@ -349,21 +460,20 @@ public class TicketPurchasePanel extends JPanel {
                 request.setPhone(phoneField.getText().trim());
                 request.setOrganization(organizationField.getText().trim());
                 request.setRegistrationDate(Date.valueOf(LocalDate.now()));
-                String preferred = "None".equals(preferredSportCombo.getSelectedItem())
-                        ? null
-                        : (String) preferredSportCombo.getSelectedItem();
-                request.setPreferredSport(preferred);
+                request.setPreferredTeam(resolvePreferredTeamSelection());
                 request.setCustomerStatus("Active");
                 request.setPaymentMethod(paymentMethodField.getText().trim());
             }
 
             TicketingService.TicketPurchaseResult result = ticketingService.purchaseTicket(request);
             confirmationArea.setText(String.format(
-                    "Purchase successful!%nSale ID: %d%nEvent: %s%nSeat: %s%nPrice: %s%nTimestamp: %s",
+                    "Purchase successful!%nSale ID: %d%nEvent: %s%nSeat: %s%nQuantity: %d%nUnit Price: %s%nTotal Amount: %s%nTimestamp: %s",
                     result.saleRecordId(),
                     result.event().getEventName(),
                     result.seat().toString(),
-                    result.pricePaid().toPlainString(),
+                    result.quantity(),
+                    formatMoney(result.unitPrice()),
+                    formatMoney(result.totalAmount()),
                     result.saleTimestamp()
             ));
 
@@ -387,16 +497,63 @@ public class TicketPurchasePanel extends JPanel {
         }
     }
 
+    private int parseQuantity(JTextField field) {
+        String text = field.getText().trim();
+        if (text.isEmpty()) {
+            throw new IllegalArgumentException("Quantity is required.");
+        }
+        try {
+            int value = Integer.parseInt(text);
+            if (value <= 0) {
+                throw new IllegalArgumentException("Quantity must be at least 1.");
+            }
+            if (value > 2) {
+                throw new IllegalArgumentException("You may purchase at most 2 seats per transaction.");
+            }
+            return value;
+        } catch (NumberFormatException ex) {
+            throw new IllegalArgumentException("Quantity must be a whole number.");
+        }
+    }
+
+    private void syncSeatTicketSelection() {
+        Seat seat = (Seat) seatCombo.getSelectedItem();
+        if (seat == null) {
+            ticketCombo.setSelectedIndex(-1);
+            unitPriceField.setText("");
+            return;
+        }
+        selectTicketInCombo(seat.getTicketId());
+        unitPriceField.setText(formatMoney(seat.getTicketPrice()));
+    }
+
+    private void selectTicketInCombo(int ticketId) {
+        ComboBoxModel<Ticket> model = ticketCombo.getModel();
+        for (int i = 0; i < model.getSize(); i++) {
+            Ticket ticket = model.getElementAt(i);
+            if (ticket != null && ticket.getTicketId() == ticketId) {
+                ticketCombo.setSelectedIndex(i);
+                return;
+            }
+        }
+        ticketCombo.setSelectedIndex(-1);
+    }
+
+    private String formatMoney(BigDecimal value) {
+        return value != null ? value.stripTrailingZeros().toPlainString() : "";
+    }
+
     private void clearForm() {
         customerCombo.setSelectedIndex(0);
         matchCombo.setSelectedIndex(0);
         seatCombo.setSelectedIndex(seatCombo.getItemCount() > 0 ? 0 : -1);
         ticketCombo.setSelectedIndex(ticketCombo.getItemCount() > 0 ? 0 : -1);
         saleDateTimeField.setText("");
-        priceField.setText("");
+        quantityField.setText("1");
         confirmationArea.setText("");
         toggleCustomerFields();
-        applyTicketPrice();
+        applyDefaultQuantity();
+        syncSeatTicketSelection();
     }
 
     private void showError(String message) {

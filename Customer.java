@@ -9,7 +9,7 @@ public class Customer {
     private String email;
     private String organization;
     private Date registrationDate;
-    private String preferredSport;
+    private String preferredTeam;
     private String status;
     private String paymentMethod;
 
@@ -22,7 +22,7 @@ public class Customer {
                     String email,
                     String organization,
                     Date registrationDate,
-                    String preferredSport,
+                    String preferredTeam,
                     String status,
                     String paymentMethod) {
         this.customerId = customerId;
@@ -32,7 +32,7 @@ public class Customer {
         this.email = email;
         this.organization = organization;
         this.registrationDate = registrationDate;
-        this.preferredSport = preferredSport;
+        this.preferredTeam = preferredTeam;
         this.status = status;
         this.paymentMethod = paymentMethod;
     }
@@ -93,12 +93,12 @@ public class Customer {
         this.registrationDate = registrationDate;
     }
 
-    public String getPreferredSport() {
-        return preferredSport;
+    public String getPreferredTeam() {
+        return preferredTeam;
     }
 
-    public void setPreferredSport(String preferredSport) {
-        this.preferredSport = preferredSport;
+    public void setPreferredTeam(String preferredTeam) {
+        this.preferredTeam = preferredTeam;
     }
 
     public String getStatus() {

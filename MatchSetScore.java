@@ -3,7 +3,7 @@ public class MatchSetScore {
     private int matchId;
     private int teamId;
     private int setNo;
-    private int points;
+    private int setPoints;
     private String matchLabel;
     private String teamName;
 
@@ -12,19 +12,19 @@ public class MatchSetScore {
     public MatchSetScore(int matchId,
                          int teamId,
                          int setNo,
-                         int points,
+                         int setPoints,
                          String matchLabel,
                          String teamName) {
         this.matchId = matchId;
         this.teamId = teamId;
         this.setNo = setNo;
-        this.points = points;
+        this.setPoints = setPoints;
         this.matchLabel = matchLabel;
         this.teamName = teamName;
     }
 
-    public MatchSetScore(int matchId, int teamId, int setNo, int points) {
-        this(matchId, teamId, setNo, points, null, null);
+    public MatchSetScore(int matchId, int teamId, int setNo, int setPoints) {
+        this(matchId, teamId, setNo, setPoints, null, null);
     }
 
     public int getMatchId() {
@@ -51,12 +51,12 @@ public class MatchSetScore {
         this.setNo = setNo;
     }
 
-    public int getPoints() {
-        return points;
+    public int getSetPoints() {
+        return setPoints;
     }
 
-    public void setPoints(int points) {
-        this.points = points;
+    public void setSetPoints(int setPoints) {
+        this.setPoints = setPoints;
     }
 
     public String getMatchLabel() {

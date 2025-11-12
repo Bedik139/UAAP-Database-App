@@ -1,4 +1,6 @@
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
@@ -32,7 +34,9 @@ public class SeatAndTicketManagerPanel extends JPanel {
     private JComboBox<Event> eventCombo;
     private JComboBox<Customer> customerCombo;
     private JTextField saleDatetimeField;
-    private JTextField priceField;
+    private JTextField quantityField;
+    private JTextField unitPriceField;
+    private JTextField totalPriceField;
     private JComboBox<Ticket> ticketCombo;
     private JComboBox<Match> matchCombo;
     private JComboBox<String> statusCombo;
@@ -44,6 +48,7 @@ public class SeatAndTicketManagerPanel extends JPanel {
     private JButton refreshButton;
 
     private List<Match> allMatches = new ArrayList<>();
+    private List<Seat> allSeats = new ArrayList<>();
 
     public SeatAndTicketManagerPanel() {
         setLayout(new BorderLayout(10, 10));
@@ -58,27 +63,49 @@ public class SeatAndTicketManagerPanel extends JPanel {
         recordIdField = new JTextField();
         recordIdField.setEditable(false);
         recordIdField.setToolTipText("Auto-filled when you select a record.");
+        UAAPTheme.styleTextField(recordIdField);
 
         seatCombo = new JComboBox<>();
         seatCombo.setToolTipText("Seat being sold.");
+        UAAPTheme.styleComboBox(seatCombo);
+        seatCombo.addActionListener(e -> {
+            syncTicketSelectionFromSeat();
+            updatePricingFields();
+        });
 
         eventCombo = new JComboBox<>();
         eventCombo.setToolTipText("Event associated with the ticket.");
-        eventCombo.addActionListener(e -> refreshMatchOptions());
+        UAAPTheme.styleComboBox(eventCombo);
+        eventCombo.addActionListener(e -> {
+            refreshMatchOptions();
+            refreshSeatOptions();
+        });
 
         customerCombo = new JComboBox<>();
         customerCombo.setToolTipText("Purchasing customer.");
+        UAAPTheme.styleComboBox(customerCombo);
 
         saleDatetimeField = new JTextField();
         saleDatetimeField.setToolTipText("Sale timestamp (YYYY-MM-DD HH:MM:SS). Leave blank to use current time.");
+        UAAPTheme.styleTextField(saleDatetimeField);
 
-        priceField = new JTextField();
-        priceField.setToolTipText("Final price paid by the customer.");
+        quantityField = new JTextField("1");
+        quantityField.setToolTipText("Enter 1-2 seats sold in this record.");
+        UAAPTheme.styleTextField(quantityField);
+        quantityField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override public void insertUpdate(DocumentEvent e) { updateTotalPriceField(); }
+            @Override public void removeUpdate(DocumentEvent e) { updateTotalPriceField(); }
+            @Override public void changedUpdate(DocumentEvent e) { updateTotalPriceField(); }
+        });
 
         ticketCombo = new JComboBox<>();
-        ticketCombo.setToolTipText("Ticket template used for the sale.");
+        ticketCombo.setToolTipText("Ticket tier (derived from seat).");
+        ticketCombo.setEnabled(false);
+        UAAPTheme.styleComboBox(ticketCombo);
+        ticketCombo.addActionListener(e -> updatePricingFields());
 
         matchCombo = new JComboBox<>();
+        UAAPTheme.styleComboBox(matchCombo);
         matchCombo.setRenderer(new DefaultListCellRenderer() {
             @Override
             public java.awt.Component getListCellRendererComponent(JList<?> list,
@@ -99,13 +126,25 @@ public class SeatAndTicketManagerPanel extends JPanel {
 
         statusCombo = new JComboBox<>(new String[]{"Sold"});
         statusCombo.setEnabled(false);
+        UAAPTheme.styleComboBox(statusCombo);
+
+        unitPriceField = new JTextField();
+        unitPriceField.setEditable(false);
+        unitPriceField.setToolTipText("Unit price derived from the selected ticket.");
+        UAAPTheme.styleTextField(unitPriceField);
+
+        totalPriceField = new JTextField();
+        totalPriceField.setEditable(false);
+        totalPriceField.setToolTipText("Quantity multiplied by unit price.");
+        UAAPTheme.styleTextField(totalPriceField);
 
         add(buildFormPanel(), BorderLayout.NORTH);
+        updatePricingFields();
     }
 
     private void initTable() {
         tableModel = new DefaultTableModel(
-                new Object[]{"Record ID", "Seat", "Event", "Customer", "Sold At", "Price", "Ticket", "Match", "Status", "Refunded At"}, 0
+                new Object[]{"Record ID", "Seat", "Event", "Customer", "Sold At", "Quantity", "Unit Price", "Total Price", "Ticket", "Match", "Status"}, 0
         ) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -114,6 +153,7 @@ public class SeatAndTicketManagerPanel extends JPanel {
         };
 
         table = new JTable(tableModel);
+        UAAPTheme.styleTable(table);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             @Override public void valueChanged(ListSelectionEvent e) {
@@ -136,6 +176,12 @@ public class SeatAndTicketManagerPanel extends JPanel {
         deleteButton = new JButton("Delete");
         clearButton = new JButton("Clear Form");
         refreshButton = new JButton("Refresh");
+
+        UAAPTheme.styleActionButton(addButton);
+        UAAPTheme.styleActionButton(updateButton);
+        UAAPTheme.styleDangerButton(deleteButton);
+        UAAPTheme.styleNeutralButton(clearButton);
+        UAAPTheme.styleInfoButton(refreshButton);
 
         panel.add(addButton);
         panel.add(updateButton);
@@ -162,15 +208,14 @@ public class SeatAndTicketManagerPanel extends JPanel {
         reloadTickets();
         reloadMatches();
         refreshMatchOptions();
+        refreshSeatOptions();
+        updatePricingFields();
     }
 
     private void reloadSeats() {
         try {
-            DefaultComboBoxModel<Seat> model = new DefaultComboBoxModel<>();
-            for (Seat seat : seatDAO.getAllSeats()) {
-                model.addElement(seat);
-            }
-            seatCombo.setModel(model);
+            allSeats = seatDAO.getAllSeats();
+            refreshSeatOptions();
         } catch (SQLException ex) {
             showError("Error loading seats:\n" + ex.getMessage());
         }
@@ -207,6 +252,7 @@ public class SeatAndTicketManagerPanel extends JPanel {
                 model.addElement(ticket);
             }
             ticketCombo.setModel(model);
+            updatePricingFields();
         } catch (SQLException ex) {
             showError("Error loading tickets:\n" + ex.getMessage());
         }
@@ -222,7 +268,6 @@ public class SeatAndTicketManagerPanel extends JPanel {
 
     private void refreshMatchOptions() {
         DefaultComboBoxModel<Match> model = new DefaultComboBoxModel<>();
-        model.addElement(null);
 
         Event selectedEvent = (Event) eventCombo.getSelectedItem();
         if (selectedEvent != null) {
@@ -237,7 +282,58 @@ public class SeatAndTicketManagerPanel extends JPanel {
             }
         }
         matchCombo.setModel(model);
-        matchCombo.setSelectedIndex(0);
+        matchCombo.setSelectedIndex(model.getSize() > 0 ? 0 : -1);
+    }
+
+    private void refreshSeatOptions() {
+        if (seatCombo == null) {
+            return;
+        }
+        DefaultComboBoxModel<Seat> model = new DefaultComboBoxModel<>();
+        Event selectedEvent = (Event) eventCombo.getSelectedItem();
+        String venue = selectedEvent != null ? selectedEvent.getVenueAddress() : null;
+        Seat currentSelection = (Seat) seatCombo.getSelectedItem();
+
+        for (Seat seat : allSeats) {
+            if (!seat.isAvailable()) {
+                continue;
+            }
+            if (!isSupportedSeatType(seat)) {
+                continue;
+            }
+            if (venue != null && !venue.equalsIgnoreCase(seat.getVenueAddress())) {
+                continue;
+            }
+            model.addElement(seat);
+        }
+
+        if (currentSelection != null && !containsSeat(model, currentSelection)) {
+            model.addElement(currentSelection);
+        }
+
+        seatCombo.setModel(model);
+        if (currentSelection != null) {
+            selectSeat(currentSelection.getSeatId());
+        } else if (model.getSize() > 0) {
+            seatCombo.setSelectedIndex(0);
+        }
+        syncTicketSelectionFromSeat();
+    }
+
+    private boolean isSupportedSeatType(Seat seat) {
+        String type = seat.getSeatType();
+        return type != null &&
+                ("Upper Box".equalsIgnoreCase(type) || "Lower Box".equalsIgnoreCase(type));
+    }
+
+    private boolean containsSeat(DefaultComboBoxModel<Seat> model, Seat seat) {
+        for (int i = 0; i < model.getSize(); i++) {
+            Seat item = model.getElementAt(i);
+            if (item != null && item.getSeatId() == seat.getSeatId()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void reloadTable() {
@@ -253,11 +349,12 @@ public class SeatAndTicketManagerPanel extends JPanel {
                         record.getEventName(),
                         record.getCustomerName(),
                         record.getSaleDatetime(),
-                        record.getPriceSold(),
+                        record.getQuantity(),
+                        formatMoney(record.getUnitPrice()),
+                        formatMoney(record.getTotalPrice()),
                         record.getTicketLabel(),
                         record.getMatchLabel() != null ? record.getMatchLabel() : "None",
-                        record.getSaleStatus(),
-                        record.getRefundDatetime() != null ? record.getRefundDatetime() : ""
+                        record.getSaleStatus()
                 });
             }
         } catch (SQLException ex) {
@@ -334,24 +431,29 @@ public class SeatAndTicketManagerPanel extends JPanel {
         Customer customer = (Customer) customerCombo.getSelectedItem();
         Ticket ticket = (Ticket) ticketCombo.getSelectedItem();
         Match match = (Match) matchCombo.getSelectedItem();
+        if (match == null) {
+            throw new IllegalArgumentException("Select the specific match for this sale.");
+        }
 
         Timestamp saleTime = parseTimestamp(saleDatetimeField);
-        BigDecimal price = parsePrice(priceField);
-        Integer matchId = (match != null) ? match.getMatchId() : null;
+        int quantity = parseQuantity(quantityField);
+        BigDecimal unitPrice = getSelectedTicketPrice();
+        Integer matchId = match.getMatchId();
         String saleStatus = "Sold";
-        Timestamp refundTime = null;
 
         SeatAndTicket record = new SeatAndTicket(
                 seat.getSeatId(),
                 event.getEventId(),
                 customer.getCustomerId(),
                 saleTime,
-                price,
+                quantity,
+                unitPrice,
                 ticket.getTicketId(),
                 matchId,
                 saleStatus
         );
-        record.setRefundDatetime(refundTime);
+        record.setUnitPrice(unitPrice);
+        record.setTotalPrice(unitPrice.multiply(BigDecimal.valueOf(quantity)));
 
         if (includeId) {
             record.setRecordId(Integer.parseInt(recordIdField.getText().trim()));
@@ -368,20 +470,66 @@ public class SeatAndTicketManagerPanel extends JPanel {
         return Timestamp.valueOf(text.replace('T', ' '));
     }
 
-    private BigDecimal parsePrice(JTextField field) {
+    private int parseQuantity(JTextField field) {
         String text = field.getText().trim();
         if (text.isEmpty()) {
-            throw new IllegalArgumentException("Price is required.");
+            throw new IllegalArgumentException("Quantity is required.");
         }
         try {
-            BigDecimal value = new BigDecimal(text);
-            if (value.signum() < 0) {
-                throw new IllegalArgumentException("Price must be zero or greater.");
+            int value = Integer.parseInt(text);
+            if (value <= 0) {
+                throw new IllegalArgumentException("Quantity must be at least 1.");
+            }
+            if (value > 2) {
+                throw new IllegalArgumentException("At most 2 seats may be sold per record.");
             }
             return value;
         } catch (NumberFormatException ex) {
-            throw new IllegalArgumentException("Price must be a valid decimal number.");
+            throw new IllegalArgumentException("Quantity must be a whole number.");
         }
+    }
+
+    private BigDecimal getSelectedTicketPrice() {
+        Seat seat = (Seat) seatCombo.getSelectedItem();
+        if (seat != null && seat.getTicketPrice() != null) {
+            return seat.getTicketPrice();
+        }
+        Ticket ticket = (Ticket) ticketCombo.getSelectedItem();
+        if (ticket == null) {
+            return BigDecimal.ZERO;
+        }
+        BigDecimal effective = ticket.getEffectivePrice();
+        return effective != null ? effective : BigDecimal.ZERO;
+    }
+
+    private void updatePricingFields() {
+        if (unitPriceField == null || totalPriceField == null) {
+            return;
+        }
+        unitPriceField.setText(formatMoney(getSelectedTicketPrice()));
+        updateTotalPriceField();
+    }
+
+    private void updateTotalPriceField() {
+        if (totalPriceField == null) {
+            return;
+        }
+        BigDecimal price = getSelectedTicketPrice();
+        int qty = safeQuantityValue();
+        BigDecimal total = price.multiply(BigDecimal.valueOf(qty));
+        totalPriceField.setText(formatMoney(total));
+    }
+
+    private int safeQuantityValue() {
+        try {
+            return parseQuantity(quantityField);
+        } catch (Exception ex) {
+            return 0;
+        }
+    }
+
+    private String formatMoney(BigDecimal value) {
+        return value != null ? value.toPlainString() : "";
     }
 
     private void populateForm(SeatAndTicket record) {
@@ -390,10 +538,12 @@ public class SeatAndTicketManagerPanel extends JPanel {
         selectEvent(record.getEventId());
         selectCustomer(record.getCustomerId());
         saleDatetimeField.setText(record.getSaleDatetime().toString());
-        priceField.setText(record.getPriceSold().toPlainString());
+        quantityField.setText(String.valueOf(record.getQuantity()));
         selectTicket(record.getTicketId());
         selectMatch(record.getMatchId());
         statusCombo.setSelectedItem(record.getSaleStatus());
+        unitPriceField.setText(formatMoney(record.getUnitPrice()));
+        totalPriceField.setText(formatMoney(record.getTotalPrice()));
     }
 
     private void selectSeat(int seatId) {
@@ -403,6 +553,7 @@ public class SeatAndTicketManagerPanel extends JPanel {
     private void selectEvent(int eventId) {
         selectComboItem(eventCombo, event -> event.getEventId() == eventId);
         refreshMatchOptions();
+        refreshSeatOptions();
     }
 
     private void selectCustomer(int customerId) {
@@ -411,11 +562,12 @@ public class SeatAndTicketManagerPanel extends JPanel {
 
     private void selectTicket(int ticketId) {
         selectComboItem(ticketCombo, ticket -> ticket.getTicketId() == ticketId);
+        updatePricingFields();
     }
 
     private void selectMatch(Integer matchId) {
         if (matchId == null) {
-            matchCombo.setSelectedIndex(0);
+            matchCombo.setSelectedIndex(-1);
             return;
         }
         for (int i = 0; i < matchCombo.getItemCount(); i++) {
@@ -425,7 +577,7 @@ public class SeatAndTicketManagerPanel extends JPanel {
                 return;
             }
         }
-        matchCombo.setSelectedIndex(0);
+        matchCombo.setSelectedIndex(-1);
     }
 
     private <T> void selectComboItem(JComboBox<T> combo, java.util.function.Predicate<T> predicate) {
@@ -440,6 +592,15 @@ public class SeatAndTicketManagerPanel extends JPanel {
         combo.setSelectedIndex(-1);
     }
 
+    private void syncTicketSelectionFromSeat() {
+        Seat seat = (Seat) seatCombo.getSelectedItem();
+        if (seat == null) {
+            ticketCombo.setSelectedIndex(-1);
+            return;
+        }
+        selectTicket(seat.getTicketId());
+    }
+
     private void clearForm() {
         recordIdField.setText("");
         if (seatCombo.getItemCount() > 0) seatCombo.setSelectedIndex(0);
@@ -447,10 +608,13 @@ public class SeatAndTicketManagerPanel extends JPanel {
         if (customerCombo.getItemCount() > 0) customerCombo.setSelectedIndex(0);
         if (ticketCombo.getItemCount() > 0) ticketCombo.setSelectedIndex(0);
         saleDatetimeField.setText("");
-        priceField.setText("");
+        quantityField.setText("1");
         matchCombo.setSelectedIndex(0);
         statusCombo.setSelectedItem("Sold");
         table.clearSelection();
+        unitPriceField.setText("");
+        totalPriceField.setText("");
+        updatePricingFields();
     }
 
     private JPanel buildFormPanel() {
@@ -462,10 +626,12 @@ public class SeatAndTicketManagerPanel extends JPanel {
         addFormField(panel, 1, 0, "Event", eventCombo);
         addFormField(panel, 1, 1, "Customer", customerCombo);
         addFormField(panel, 2, 0, "Sale Timestamp", saleDatetimeField);
-        addFormField(panel, 2, 1, "Price Sold", priceField);
+        addFormField(panel, 2, 1, "Quantity", quantityField);
         addFormField(panel, 3, 0, "Ticket", ticketCombo);
-        addFormField(panel, 3, 1, "Match (optional)", matchCombo);
-        addFormField(panel, 4, 0, "Sale Status", statusCombo);
+        addFormField(panel, 3, 1, "Match", matchCombo);
+        addFormField(panel, 4, 0, "Unit Price", unitPriceField);
+        addFormField(panel, 4, 1, "Total Price", totalPriceField);
+        addFormField(panel, 5, 0, "Sale Status", statusCombo);
 
         return panel;
     }

@@ -8,6 +8,7 @@ public class Player {
     private String firstName;
     private String lastName;
     private int playerNumber;
+    private String sport;
     private Integer age;
     private String position;
     private BigDecimal weight;
@@ -22,6 +23,7 @@ public class Player {
                   String firstName,
                   String lastName,
                   int playerNumber,
+                  String sport,
                   Integer age,
                   String position,
                   BigDecimal weight,
@@ -33,6 +35,7 @@ public class Player {
         this.firstName = firstName;
         this.lastName = lastName;
         this.playerNumber = playerNumber;
+        this.sport = sport;
         this.age = age;
         this.position = position;
         this.weight = weight;
@@ -44,12 +47,13 @@ public class Player {
                   String firstName,
                   String lastName,
                   int playerNumber,
+                  String sport,
                   Integer age,
                   String position,
                   BigDecimal weight,
                   BigDecimal height,
                   int individualScore) {
-        this(0, teamId, null, firstName, lastName, playerNumber, age, position, weight, height, individualScore);
+        this(0, teamId, null, firstName, lastName, playerNumber, sport, age, position, weight, height, individualScore);
     }
 
     public int getPlayerId() {
@@ -130,6 +134,14 @@ public class Player {
 
     public void setHeight(BigDecimal height) {
         this.height = height;
+    }
+
+    public String getSport() {
+        return sport;
+    }
+
+    public void setSport(String sport) {
+        this.sport = sport;
     }
 
     public int getIndividualScore() {

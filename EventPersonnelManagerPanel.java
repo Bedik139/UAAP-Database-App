@@ -67,28 +67,36 @@ public class EventPersonnelManagerPanel extends JPanel {
         idField = new JTextField();
         idField.setEditable(false);
         idField.setToolTipText("Auto-filled when you select a personnel entry.");
+        UAAPTheme.styleTextField(idField);
 
         firstNameField = new JTextField();
         firstNameField.setToolTipText("First name of the personnel.");
+        UAAPTheme.styleTextField(firstNameField);
 
         lastNameField = new JTextField();
         lastNameField.setToolTipText("Last name of the personnel.");
+        UAAPTheme.styleTextField(lastNameField);
 
         availabilityField = new JTextField();
         availabilityField.setToolTipText("Availability description, e.g. 'Available', 'On Leave'.");
+        UAAPTheme.styleTextField(availabilityField);
 
         roleCombo = new JComboBox<>(ROLES);
         roleCombo.setToolTipText("Assigned role during the event.");
+        UAAPTheme.styleComboBox(roleCombo);
 
         affiliationField = new JTextField();
         affiliationField.setToolTipText("Affiliated organization or team.");
+        UAAPTheme.styleTextField(affiliationField);
 
         contactField = new JTextField();
         contactField.setToolTipText("Contact number, optional.");
+        UAAPTheme.styleTextField(contactField);
 
         eventCombo = new JComboBox<>();
         eventCombo.setToolTipText("Event assignment.");
         eventCombo.addActionListener(e -> refreshMatchOptions());
+        UAAPTheme.styleComboBox(eventCombo);
 
         matchCombo = new JComboBox<>();
         matchCombo.setRenderer(new DefaultListCellRenderer() {
@@ -99,11 +107,12 @@ public class EventPersonnelManagerPanel extends JPanel {
                                                                    boolean isSelected,
                                                                    boolean cellHasFocus) {
                 super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-                setText(value == null ? "No linked match" : value.toString());
+                setText(value == null ? "Select match" : value.toString());
                 return this;
             }
         });
-        matchCombo.setToolTipText("Optional specific match for the personnel.");
+        matchCombo.setToolTipText("Match assignment for this personnel (required).");
+        UAAPTheme.styleComboBox(matchCombo);
 
         add(buildFormPanel(), BorderLayout.NORTH);
     }
@@ -119,6 +128,7 @@ public class EventPersonnelManagerPanel extends JPanel {
         };
 
         table = new JTable(tableModel);
+        UAAPTheme.styleTable(table);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             @Override public void valueChanged(ListSelectionEvent e) {
@@ -141,6 +151,12 @@ public class EventPersonnelManagerPanel extends JPanel {
         deleteButton = new JButton("Delete");
         clearButton = new JButton("Clear Form");
         refreshButton = new JButton("Refresh");
+
+        UAAPTheme.styleActionButton(addButton);
+        UAAPTheme.styleActionButton(updateButton);
+        UAAPTheme.styleDangerButton(deleteButton);
+        UAAPTheme.styleNeutralButton(clearButton);
+        UAAPTheme.styleInfoButton(refreshButton);
 
         addButton.addActionListener(e -> handleAdd());
         updateButton.addActionListener(e -> handleUpdate());
@@ -219,7 +235,7 @@ public class EventPersonnelManagerPanel extends JPanel {
                         personnel.getRole(),
                         personnel.getAvailabilityStatus(),
                         personnel.getEventName(),
-                        personnel.getMatchLabel() != null ? personnel.getMatchLabel() : "None",
+                        personnel.getMatchLabel() != null ? personnel.getMatchLabel() : "Match unavailable",
                         personnel.getAffiliation(),
                         personnel.getContactNo() != null ? personnel.getContactNo() : ""
                 });
@@ -301,7 +317,10 @@ public class EventPersonnelManagerPanel extends JPanel {
         if (event == null) {
             throw new IllegalArgumentException("Select an event.");
         }
-        if (match != null && match.getEventId() != event.getEventId()) {
+        if (match == null) {
+            throw new IllegalArgumentException("Select the specific match this personnel will cover.");
+        }
+        if (match.getEventId() != event.getEventId()) {
             throw new IllegalArgumentException("Selected match does not belong to the chosen event.");
         }
 
@@ -313,7 +332,7 @@ public class EventPersonnelManagerPanel extends JPanel {
                 affiliation,
                 contact.isEmpty() ? null : contact,
                 event.getEventId(),
-                match != null ? match.getMatchId() : null
+                match.getMatchId()
         );
 
         if (includeId) {
@@ -394,7 +413,7 @@ public class EventPersonnelManagerPanel extends JPanel {
         addFormField(panel, 2, 1, "Affiliation", affiliationField);
         addFormField(panel, 3, 0, "Contact No.", contactField);
         addFormField(panel, 3, 1, "Event", eventCombo);
-        addFormField(panel, 4, 0, "Match (optional)", matchCombo);
+        addFormField(panel, 4, 0, "Match", matchCombo);
 
         return panel;
     }

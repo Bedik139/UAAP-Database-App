@@ -8,7 +8,7 @@ import java.util.List;
 public class MatchQuarterScoreDAO {
 
     public void insertScore(MatchQuarterScore score) throws SQLException {
-        String sql = "INSERT INTO match_quarter_score (match_id, team_id, quarter_no, points) " +
+        String sql = "INSERT INTO match_quarter_score (match_id, team_id, quarter_no, quarter_points) " +
                 "VALUES (?, ?, ?, ?)";
 
         try (Connection conn = Database.getConnection();
@@ -22,7 +22,7 @@ public class MatchQuarterScoreDAO {
     public List<MatchQuarterScore> getScoresForMatch(int matchId) throws SQLException {
         List<MatchQuarterScore> list = new ArrayList<>();
 
-        String sql = "SELECT mqs.match_id, mqs.team_id, mqs.quarter_no, mqs.points, " +
+        String sql = "SELECT mqs.match_id, mqs.team_id, mqs.quarter_no, mqs.quarter_points, " +
                 "CONCAT('#', m.match_id, ' ', e.event_name, ' (', m.match_type, ')') AS match_label, " +
                 "t.team_name " +
                 "FROM match_quarter_score mqs " +
@@ -43,7 +43,7 @@ public class MatchQuarterScoreDAO {
                             rs.getInt("match_id"),
                             rs.getInt("team_id"),
                             rs.getInt("quarter_no"),
-                            rs.getInt("points"),
+                            rs.getInt("quarter_points"),
                             rs.getString("match_label"),
                             rs.getString("team_name")
                     );
@@ -59,7 +59,7 @@ public class MatchQuarterScoreDAO {
                             int originalMatchId,
                             int originalTeamId,
                             int originalQuarter) throws SQLException {
-        String sql = "UPDATE match_quarter_score SET match_id = ?, team_id = ?, quarter_no = ?, points = ? " +
+        String sql = "UPDATE match_quarter_score SET match_id = ?, team_id = ?, quarter_no = ?, quarter_points = ? " +
                 "WHERE match_id = ? AND team_id = ? AND quarter_no = ?";
 
         try (Connection conn = Database.getConnection();
@@ -90,6 +90,6 @@ public class MatchQuarterScoreDAO {
         ps.setInt(1, score.getMatchId());
         ps.setInt(2, score.getTeamId());
         ps.setInt(3, score.getQuarterNo());
-        ps.setInt(4, score.getPoints());
+        ps.setInt(4, score.getQuarterPoints());
     }
 }

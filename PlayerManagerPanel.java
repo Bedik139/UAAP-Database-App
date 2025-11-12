@@ -1,7 +1,3 @@
-import javax.swing.*;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
-import javax.swing.table.DefaultTableModel;
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
@@ -11,8 +7,28 @@ import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 
 public class PlayerManagerPanel extends JPanel {
+
+    private static final String[] BASKETBALL_POSITIONS = {
+            "Select Position",
+            "Point Guard (PG)",
+            "Shooting Guard (SG)",
+            "Small Forward (SF)",
+            "Power Forward (PF)",
+            "Center (C)"
+    };
+
+    private static final String[] VOLLEYBALL_POSITIONS = {
+            "Select Position",
+            "Setter (S)",
+            "Outside Hitter (OH)",
+            "Opposite Spiker (OS)",
+            "Middle Blocker (MB)",
+            "Libero (L)"
+    };
 
     private final PlayerDAO playerDAO = new PlayerDAO();
     private final TeamDAO teamDAO = new TeamDAO();
@@ -21,13 +37,28 @@ public class PlayerManagerPanel extends JPanel {
     private DefaultTableModel tableModel;
     private List<Player> cachedPlayers = new ArrayList<>();
 
+    private JTabbedPane sportTabs;
+    private JPanel basketballPanel;
+    private JPanel volleyballPanel;
+
+    // Basketball panel components
+    private JTable basketballTable;
+    private DefaultTableModel basketballTableModel;
+    private List<Player> cachedBasketballPlayers = new ArrayList<>();
+    
+    // Volleyball panel components
+    private JTable volleyballTable;
+    private DefaultTableModel volleyballTableModel;
+    private List<Player> cachedVolleyballPlayers = new ArrayList<>();
+
     private JTextField idField;
     private JComboBox<Team> teamCombo;
     private JTextField firstNameField;
     private JTextField lastNameField;
     private JTextField numberField;
+    private JComboBox<String> sportCombo;
     private JTextField ageField;
-    private JTextField positionField;
+    private JComboBox<String> positionCombo;
     private JTextField weightField;
     private JTextField heightField;
     private JTextField scoreField;
@@ -41,10 +72,10 @@ public class PlayerManagerPanel extends JPanel {
     public PlayerManagerPanel() {
         setLayout(new BorderLayout(10, 10));
         initForm();
-        initTable();
+        initSportTabs();
         initButtons();
         reloadTeams();
-        reloadTable();
+        reloadAllTables();
     }
 
     private void initForm() {
@@ -59,14 +90,19 @@ public class PlayerManagerPanel extends JPanel {
         lastNameField.setToolTipText("Enter the player's surname.");
         numberField = new JTextField();
         numberField.setToolTipText("Jersey number. Must be unique per team.");
+        
+        sportCombo = new JComboBox<>(new String[]{"Basketball", "Volleyball"});
+        sportCombo.setToolTipText("Select the sport for this player.");
+        sportCombo.addActionListener(e -> updatePositionOptions());
+        
         ageField = new JTextField();
         ageField.setToolTipText("Optional. Enter age in years.");
-        positionField = new JTextField();
-        positionField.setToolTipText("Optional. e.g., Setter, Opposite Spiker.");
+        positionCombo = new JComboBox<>(BASKETBALL_POSITIONS);
+        positionCombo.setToolTipText("Select the player's position.");
         weightField = new JTextField();
         weightField.setToolTipText("Optional. Weight in kilograms (decimal allowed).");
         heightField = new JTextField();
-        heightField.setToolTipText("Optional. Height in centimeters (decimal allowed).");
+        heightField.setToolTipText("Optional. Height in meters (decimal allowed).");
         scoreField = new JTextField("0");
         scoreField.setToolTipText("Running total score for this player.");
 
@@ -74,10 +110,33 @@ public class PlayerManagerPanel extends JPanel {
         add(formPanel, BorderLayout.NORTH);
     }
 
-    private void initTable() {
-        tableModel = new DefaultTableModel(
+    private void updatePositionOptions() {
+        String selectedSport = (String) sportCombo.getSelectedItem();
+        String[] positions = "Basketball".equals(selectedSport) ? BASKETBALL_POSITIONS : VOLLEYBALL_POSITIONS;
+        positionCombo.setModel(new DefaultComboBoxModel<>(positions));
+    }
+
+    private void initSportTabs() {
+        sportTabs = new JTabbedPane();
+        UAAPTheme.styleTabPane(sportTabs);
+
+        // Basketball Tab
+        basketballPanel = createSportPanel("Basketball");
+        sportTabs.addTab("🏀 Basketball", basketballPanel);
+
+        // Volleyball Tab
+        volleyballPanel = createSportPanel("Volleyball");
+        sportTabs.addTab("🏐 Volleyball", volleyballPanel);
+
+        add(sportTabs, BorderLayout.CENTER);
+    }
+
+    private JPanel createSportPanel(String sport) {
+        JPanel panel = new JPanel(new BorderLayout());
+        
+        DefaultTableModel model = new DefaultTableModel(
                 new Object[]{"ID", "Team", "First Name", "Last Name", "Number",
-                        "Age", "Position", "Weight", "Height", "Score"}, 0
+                        "Age", "Position", "Weight (kg)", "Height (m)", "Score"}, 0
         ) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -85,19 +144,34 @@ public class PlayerManagerPanel extends JPanel {
             }
         };
 
-        table = new JTable(tableModel);
+        JTable table = new JTable(model);
+        UAAPTheme.styleTable(table);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
-            @Override public void valueChanged(ListSelectionEvent e) {
-                int row = table.getSelectedRow();
-                if (row >= 0 && row < cachedPlayers.size()) {
-                    Player player = cachedPlayers.get(row);
+        
+        if ("Basketball".equals(sport)) {
+            basketballTable = table;
+            basketballTableModel = model;
+            table.getSelectionModel().addListSelectionListener(e -> {
+                int row = basketballTable.getSelectedRow();
+                if (row >= 0 && row < cachedBasketballPlayers.size()) {
+                    Player player = cachedBasketballPlayers.get(row);
                     populateForm(player);
                 }
-            }
-        });
+            });
+        } else {
+            volleyballTable = table;
+            volleyballTableModel = model;
+            table.getSelectionModel().addListSelectionListener(e -> {
+                int row = volleyballTable.getSelectedRow();
+                if (row >= 0 && row < cachedVolleyballPlayers.size()) {
+                    Player player = cachedVolleyballPlayers.get(row);
+                    populateForm(player);
+                }
+            });
+        }
 
-        add(new JScrollPane(table), BorderLayout.CENTER);
+        panel.add(new JScrollPane(table), BorderLayout.CENTER);
+        return panel;
     }
 
     private void initButtons() {
@@ -120,7 +194,7 @@ public class PlayerManagerPanel extends JPanel {
         clearButton.addActionListener(e -> clearForm());
         refreshButton.addActionListener(e -> {
             reloadTeams();
-            reloadTable();
+            reloadAllTables();
         });
 
         add(buttonPanel, BorderLayout.SOUTH);
@@ -144,28 +218,48 @@ public class PlayerManagerPanel extends JPanel {
         }
     }
 
-    private void reloadTable() {
-        tableModel.setRowCount(0);
-        cachedPlayers.clear();
+    private void reloadAllTables() {
+        reloadTableBySport("Basketball");
+        reloadTableBySport("Volleyball");
+    }
+
+    private void reloadTableBySport(String sport) {
         try {
-            cachedPlayers = playerDAO.getAllPlayers();
-            for (Player player : cachedPlayers) {
-                tableModel.addRow(new Object[]{
-                        player.getPlayerId(),
-                        player.getTeamName(),
-                        player.getFirstName(),
-                        player.getLastName(),
-                        player.getPlayerNumber(),
-                        player.getAge() != null ? player.getAge() : "",
-                        player.getPosition() != null ? player.getPosition() : "",
-                        player.getWeight() != null ? player.getWeight().toPlainString() : "",
-                        player.getHeight() != null ? player.getHeight().toPlainString() : "",
-                        player.getIndividualScore()
-                });
+            List<Player> players = playerDAO.getPlayersBySport(sport);
+            
+            if ("Basketball".equals(sport)) {
+                basketballTableModel.setRowCount(0);
+                cachedBasketballPlayers.clear();
+                cachedBasketballPlayers.addAll(players);
+                for (Player player : players) {
+                    basketballTableModel.addRow(createTableRow(player));
+                }
+            } else {
+                volleyballTableModel.setRowCount(0);
+                cachedVolleyballPlayers.clear();
+                cachedVolleyballPlayers.addAll(players);
+                for (Player player : players) {
+                    volleyballTableModel.addRow(createTableRow(player));
+                }
             }
         } catch (SQLException ex) {
-            showError("Error loading players:\n" + ex.getMessage());
+            showError("Error loading " + sport + " players:\n" + ex.getMessage());
         }
+    }
+
+    private Object[] createTableRow(Player player) {
+        return new Object[]{
+                player.getPlayerId(),
+                player.getTeamName(),
+                player.getFirstName(),
+                player.getLastName(),
+                player.getPlayerNumber(),
+                player.getAge() != null ? player.getAge() : "",
+                player.getPosition() != null ? player.getPosition() : "",
+                player.getWeight() != null ? player.getWeight().toPlainString() : "",
+                player.getHeight() != null ? player.getHeight().toPlainString() : "",
+                player.getIndividualScore()
+        };
     }
 
     private void handleAdd() {
@@ -173,7 +267,7 @@ public class PlayerManagerPanel extends JPanel {
             Player player = formToPlayer(false);
             playerDAO.insertPlayer(player);
             showInfo("Player added.");
-            reloadTable();
+            reloadAllTables();
             clearForm();
         } catch (Exception ex) {
             showError("Error adding player:\n" + ex.getMessage());
@@ -190,7 +284,7 @@ public class PlayerManagerPanel extends JPanel {
             Player player = formToPlayer(true);
             playerDAO.updatePlayer(player);
             showInfo("Player updated.");
-            reloadTable();
+            reloadAllTables();
             clearForm();
         } catch (Exception ex) {
             showError("Error updating player:\n" + ex.getMessage());
@@ -217,7 +311,7 @@ public class PlayerManagerPanel extends JPanel {
             int playerId = Integer.parseInt(idField.getText().trim());
             playerDAO.deletePlayer(playerId);
             showInfo("Player deleted.");
-            reloadTable();
+            reloadAllTables();
             clearForm();
         } catch (Exception ex) {
             showError("Error deleting player:\n" + ex.getMessage());
@@ -237,9 +331,13 @@ public class PlayerManagerPanel extends JPanel {
         }
 
         int playerNumber = parseNonNegativeInt(numberField, "Player number");
+        String sport = (String) sportCombo.getSelectedItem();
+        if (sport == null || sport.trim().isEmpty()) {
+            throw new IllegalArgumentException("Sport is required.");
+        }
         Integer age = parseOptionalNonNegativeInt(ageField, "Age");
-        String position = positionField.getText().trim();
-        if (position.isEmpty()) {
+        String position = (String) positionCombo.getSelectedItem();
+        if (position != null && (position.trim().isEmpty() || position.equals("Select Position"))) {
             position = null;
         }
         BigDecimal weight = parseOptionalDecimal(weightField, "Weight");
@@ -251,6 +349,7 @@ public class PlayerManagerPanel extends JPanel {
                 firstName,
                 lastName,
                 playerNumber,
+                sport,
                 age,
                 position,
                 weight,
@@ -272,8 +371,10 @@ public class PlayerManagerPanel extends JPanel {
         firstNameField.setText(player.getFirstName());
         lastNameField.setText(player.getLastName());
         numberField.setText(String.valueOf(player.getPlayerNumber()));
+        sportCombo.setSelectedItem(player.getSport());
+        updatePositionOptions();
         ageField.setText(player.getAge() != null ? String.valueOf(player.getAge()) : "");
-        positionField.setText(player.getPosition() != null ? player.getPosition() : "");
+        selectPositionInCombo(player.getPosition());
         weightField.setText(player.getWeight() != null ? player.getWeight().toPlainString() : "");
         heightField.setText(player.getHeight() != null ? player.getHeight().toPlainString() : "");
         scoreField.setText(String.valueOf(player.getIndividualScore()));
@@ -291,6 +392,23 @@ public class PlayerManagerPanel extends JPanel {
         teamCombo.setSelectedIndex(-1);
     }
 
+    private void selectPositionInCombo(String position) {
+        if (position == null || position.isBlank()) {
+            positionCombo.setSelectedIndex(0);
+            return;
+        }
+        ComboBoxModel<String> model = positionCombo.getModel();
+        for (int i = 0; i < model.getSize(); i++) {
+            String option = model.getElementAt(i);
+            if (option.equalsIgnoreCase(position)) {
+                positionCombo.setSelectedIndex(i);
+                return;
+            }
+        }
+        positionCombo.addItem(position);
+        positionCombo.setSelectedItem(position);
+    }
+
     private void clearForm() {
         idField.setText("");
         if (teamCombo.getItemCount() > 0) {
@@ -299,12 +417,17 @@ public class PlayerManagerPanel extends JPanel {
         firstNameField.setText("");
         lastNameField.setText("");
         numberField.setText("");
+        sportCombo.setSelectedIndex(0);
+        updatePositionOptions();
         ageField.setText("");
-        positionField.setText("");
+        if (positionCombo.getItemCount() > 0) {
+            positionCombo.setSelectedIndex(0);
+        }
         weightField.setText("");
         heightField.setText("");
         scoreField.setText("0");
-        table.clearSelection();
+        basketballTable.clearSelection();
+        volleyballTable.clearSelection();
     }
 
     private int parseNonNegativeInt(JTextField field, String label) {
@@ -372,11 +495,12 @@ public class PlayerManagerPanel extends JPanel {
         addFormField(panel, 1, 0, "First Name", firstNameField);
         addFormField(panel, 1, 1, "Last Name", lastNameField);
         addFormField(panel, 2, 0, "Jersey Number", numberField);
-        addFormField(panel, 2, 1, "Age (optional)", ageField);
-        addFormField(panel, 3, 0, "Position (optional)", positionField);
-        addFormField(panel, 3, 1, "Individual Score", scoreField);
-        addFormField(panel, 4, 0, "Weight kg (optional)", weightField);
-        addFormField(panel, 4, 1, "Height cm (optional)", heightField);
+        addFormField(panel, 2, 1, "Sport", sportCombo);
+        addFormField(panel, 3, 0, "Age (optional)", ageField);
+        addFormField(panel, 3, 1, "Position", positionCombo);
+        addFormField(panel, 4, 0, "Individual Score", scoreField);
+        addFormField(panel, 4, 1, "Weight (kg) (optional)", weightField);
+        addFormField(panel, 5, 0, "Height (m) (optional)", heightField);
 
         return panel;
     }

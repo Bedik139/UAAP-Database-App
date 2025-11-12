@@ -1,3 +1,11 @@
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
@@ -9,14 +17,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.table.DefaultTableModel;
-import java.awt.BorderLayout;
-import java.awt.FlowLayout;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
 
 public class MatchResultPanel extends JPanel {
 
@@ -53,6 +53,7 @@ public class MatchResultPanel extends JPanel {
 
         matchCombo = new JComboBox<>();
         matchCombo.addActionListener(e -> loadMatchDetails());
+        UAAPTheme.styleComboBox(matchCombo);
 
         homeTeamLabel = new JLabel("-");
         awayTeamLabel = new JLabel("-");
@@ -60,6 +61,11 @@ public class MatchResultPanel extends JPanel {
         awayScoreField = new JTextField(5);
         summaryField = new JTextField(25);
         processedByField = new JTextField(20);
+        
+        UAAPTheme.styleTextField(homeScoreField);
+        UAAPTheme.styleTextField(awayScoreField);
+        UAAPTheme.styleTextField(summaryField);
+        UAAPTheme.styleTextField(processedByField);
 
         addFormField(panel, 0, "Match", matchCombo);
         addFormField(panel, 1, "Home Team", homeTeamLabel);
@@ -79,6 +85,7 @@ public class MatchResultPanel extends JPanel {
             }
         };
         playerTable = new JTable(playerModel);
+        UAAPTheme.styleTable(playerTable);
         playerTable.getColumnModel().getColumn(2).setPreferredWidth(100);
 
         JPanel panel = new JPanel(new BorderLayout());
@@ -91,6 +98,10 @@ public class MatchResultPanel extends JPanel {
         JButton commitButton = new JButton("Record Result");
         JButton clearButton = new JButton("Clear");
         JButton refreshButton = new JButton("Refresh Matches");
+
+        UAAPTheme.styleActionButton(commitButton);
+        UAAPTheme.styleNeutralButton(clearButton);
+        UAAPTheme.styleInfoButton(refreshButton);
 
         commitButton.addActionListener(e -> handleRecordResult());
         clearButton.addActionListener(e -> clearForm());

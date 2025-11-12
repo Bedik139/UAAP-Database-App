@@ -11,7 +11,7 @@ public class CustomerDAO {
 
     private static final String BASE_SELECT =
             "SELECT customer_id, customer_first_name, customer_last_name, phone_number, email, " +
-            "organization, registration_date, preferred_sport, customer_status, payment_method " +
+            "organization, registration_date, preferred_team, customer_status, payment_method " +
             "FROM customer ";
 
     public List<Customer> getAllCustomers() throws SQLException {
@@ -69,7 +69,7 @@ public class CustomerDAO {
     public int insertCustomer(Customer customer) throws SQLException {
         String sql = "INSERT INTO customer " +
                 "(customer_first_name, customer_last_name, phone_number, email, organization, " +
-                "registration_date, preferred_sport, customer_status, payment_method) " +
+                "registration_date, preferred_team, customer_status, payment_method) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = Database.getConnection();
@@ -86,7 +86,7 @@ public class CustomerDAO {
             } else {
                 ps.setDate(6, new Date(System.currentTimeMillis()));
             }
-            ps.setString(7, customer.getPreferredSport());
+            ps.setString(7, customer.getPreferredTeam());
             ps.setString(8, customer.getStatus());
             ps.setString(9, customer.getPaymentMethod());
 
@@ -113,7 +113,7 @@ public class CustomerDAO {
                 rs.getString("email"),
                 rs.getString("organization"),
                 rs.getDate("registration_date"),
-                rs.getString("preferred_sport"),
+                rs.getString("preferred_team"),
                 rs.getString("customer_status"),
                 rs.getString("payment_method")
         );

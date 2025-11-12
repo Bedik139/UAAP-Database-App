@@ -60,8 +60,10 @@ public class MatchSetScoreManagerPanel extends JPanel {
 
         matchIdField = new JTextField(8);
         matchIdField.setToolTipText("Enter a volleyball match ID to load set scores.");
+        UAAPTheme.styleTextField(matchIdField);
 
         loadButton = new JButton("Load Match");
+        UAAPTheme.styleInfoButton(loadButton);
         loadButton.addActionListener(e -> handleLoadMatch());
 
         matchInfoLabel = new JLabel("No match loaded.");
@@ -99,6 +101,7 @@ public class MatchSetScoreManagerPanel extends JPanel {
         };
 
         table = new JTable(tableModel);
+        UAAPTheme.styleTable(table);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             @Override public void valueChanged(ListSelectionEvent e) {
@@ -117,12 +120,15 @@ public class MatchSetScoreManagerPanel extends JPanel {
         teamCombo = new JComboBox<>();
         teamCombo.setEnabled(false);
         teamCombo.setToolTipText("Participating team for the loaded match.");
+        UAAPTheme.styleComboBox(teamCombo);
 
         setField = new JTextField();
         setField.setToolTipText("Set number (1-5).");
+        UAAPTheme.styleTextField(setField);
 
         pointsField = new JTextField();
         pointsField.setToolTipText("Points scored in the set.");
+        UAAPTheme.styleTextField(pointsField);
 
         JPanel formPanel = new JPanel(new GridBagLayout());
         formPanel.setBorder(BorderFactory.createTitledBorder("Set Score Details"));
@@ -141,6 +147,11 @@ public class MatchSetScoreManagerPanel extends JPanel {
         updateButton = new JButton("Update");
         deleteButton = new JButton("Delete");
         clearButton = new JButton("Clear Form");
+
+        UAAPTheme.styleActionButton(addButton);
+        UAAPTheme.styleActionButton(updateButton);
+        UAAPTheme.styleDangerButton(deleteButton);
+        UAAPTheme.styleNeutralButton(clearButton);
 
         addButton.addActionListener(e -> handleAdd());
         updateButton.addActionListener(e -> handleUpdate());
@@ -245,7 +256,7 @@ public class MatchSetScoreManagerPanel extends JPanel {
                 tableModel.addRow(new Object[]{
                         score.getTeamName(),
                         score.getSetNo(),
-                        score.getPoints()
+                        score.getSetPoints()
                 });
             }
         } catch (SQLException ex) {
@@ -360,7 +371,7 @@ public class MatchSetScoreManagerPanel extends JPanel {
 
         selectTeam(score.getTeamId());
         setField.setText(String.valueOf(score.getSetNo()));
-        pointsField.setText(String.valueOf(score.getPoints()));
+        pointsField.setText(String.valueOf(score.getSetPoints()));
     }
 
     private void selectTeam(int teamId) {
@@ -464,7 +475,7 @@ public class MatchSetScoreManagerPanel extends JPanel {
         for (MatchSetScore score : cachedScores) {
             perSet
                     .computeIfAbsent(score.getSetNo(), key -> new TreeMap<>())
-                    .put(score.getTeamId(), score.getPoints());
+                    .put(score.getTeamId(), score.getSetPoints());
         }
 
         StringBuilder builder = new StringBuilder();
@@ -548,4 +559,3 @@ public class MatchSetScoreManagerPanel extends JPanel {
         }
     }
 }
-

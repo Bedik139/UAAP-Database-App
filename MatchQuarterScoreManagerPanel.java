@@ -60,8 +60,10 @@ public class MatchQuarterScoreManagerPanel extends JPanel {
 
         matchIdField = new JTextField(8);
         matchIdField.setToolTipText("Enter a match ID (basketball) to load scores.");
+        UAAPTheme.styleTextField(matchIdField);
 
         loadButton = new JButton("Load Match");
+        UAAPTheme.styleInfoButton(loadButton);
         loadButton.addActionListener(e -> handleLoadMatch());
 
         matchInfoLabel = new JLabel("No match loaded.");
@@ -99,6 +101,7 @@ public class MatchQuarterScoreManagerPanel extends JPanel {
         };
 
         table = new JTable(tableModel);
+        UAAPTheme.styleTable(table);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             @Override public void valueChanged(ListSelectionEvent e) {
@@ -117,12 +120,15 @@ public class MatchQuarterScoreManagerPanel extends JPanel {
         teamCombo = new JComboBox<>();
         teamCombo.setEnabled(false);
         teamCombo.setToolTipText("Participating team for the loaded match.");
+        UAAPTheme.styleComboBox(teamCombo);
 
         quarterField = new JTextField();
         quarterField.setToolTipText("Quarter number (1-4).");
+        UAAPTheme.styleTextField(quarterField);
 
         pointsField = new JTextField();
         pointsField.setToolTipText("Points scored in the quarter.");
+        UAAPTheme.styleTextField(pointsField);
 
         JPanel formPanel = new JPanel(new GridBagLayout());
         formPanel.setBorder(BorderFactory.createTitledBorder("Quarter Score Details"));
@@ -141,6 +147,11 @@ public class MatchQuarterScoreManagerPanel extends JPanel {
         updateButton = new JButton("Update");
         deleteButton = new JButton("Delete");
         clearButton = new JButton("Clear Form");
+
+        UAAPTheme.styleActionButton(addButton);
+        UAAPTheme.styleActionButton(updateButton);
+        UAAPTheme.styleDangerButton(deleteButton);
+        UAAPTheme.styleNeutralButton(clearButton);
 
         addButton.addActionListener(e -> handleAdd());
         updateButton.addActionListener(e -> handleUpdate());
@@ -245,7 +256,7 @@ public class MatchQuarterScoreManagerPanel extends JPanel {
                 tableModel.addRow(new Object[]{
                         score.getTeamName(),
                         score.getQuarterNo(),
-                        score.getPoints()
+                        score.getQuarterPoints()
                 });
             }
         } catch (SQLException ex) {
@@ -360,7 +371,7 @@ public class MatchQuarterScoreManagerPanel extends JPanel {
 
         selectTeam(score.getTeamId());
         quarterField.setText(String.valueOf(score.getQuarterNo()));
-        pointsField.setText(String.valueOf(score.getPoints()));
+        pointsField.setText(String.valueOf(score.getQuarterPoints()));
     }
 
     private void selectTeam(int teamId) {
@@ -464,7 +475,7 @@ public class MatchQuarterScoreManagerPanel extends JPanel {
         for (MatchQuarterScore score : cachedScores) {
             perQuarter
                     .computeIfAbsent(score.getQuarterNo(), key -> new TreeMap<>())
-                    .put(score.getTeamId(), score.getPoints());
+                    .put(score.getTeamId(), score.getQuarterPoints());
         }
 
         StringBuilder builder = new StringBuilder();
@@ -548,4 +559,3 @@ public class MatchQuarterScoreManagerPanel extends JPanel {
         }
     }
 }
-
