@@ -6,13 +6,13 @@ Replaces error-prone spreadsheets with a robust database system for:
 - **Team & Player Tracking** - Live scores, standings, and individual statistics
 - **Revenue Reporting** - Comprehensive analytics on sales, occupancy, and performance
 
-## 📋 Prerequisites
+## Prerequisites
 
 - **Java JDK 11+** (tested with JDK 17)
 - **MySQL 8.0+** (local or network)
 - **MySQL Connector/J 9.5.0** (included in `lib/`)
 
-## 🗄️ Database Setup
+## Database Setup
 
 ### 1. Create Database
 ```sql
@@ -166,7 +166,7 @@ Two portals: **Manager** (full control) | **Customer** (ticket operations)
 - Records sale with audit trail
 - Marks seat as sold (atomic operation)
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 **ClassNotFoundException: com.mysql.cj.jdbc.Driver**
 - Verify `lib/mysql-connector-j-9.5.0.jar` is in classpath
