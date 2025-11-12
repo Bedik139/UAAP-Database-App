@@ -53,8 +53,6 @@ private static final String USER = "your_username";
 private static final String PASSWORD = "your_password";
 ```
 
-## 🚀 Compile and Run
-
 ### Compile (Windows)
 ```powershell
 javac -cp ".;lib/mysql-connector-j-9.5.0.jar" *.java
@@ -162,8 +160,6 @@ Two portals: **Manager** (full control) | **Customer** (ticket operations)
 - Creates/retrieves customer record
 - Records sale with audit trail
 - Marks seat as sold (atomic operation)
-
-## 🐛 Troubleshooting
 
 =======
 # UAAP Event Management System
