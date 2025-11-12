@@ -48,6 +48,7 @@ public class MatchTeamManagerPanel extends JPanel {
     private void initForm() {
         matchCombo = new JComboBox<>();
         matchCombo.setToolTipText("Match to link.");
+        matchCombo.addActionListener(e -> reloadTable());
 
         teamCombo = new JComboBox<>();
         teamCombo.setToolTipText("Team participating in the match.");
@@ -129,6 +130,7 @@ public class MatchTeamManagerPanel extends JPanel {
         } catch (SQLException ex) {
             showError("Error loading matches:\n" + ex.getMessage());
         }
+        reloadTable();
     }
 
     private void reloadTeams() {
@@ -151,7 +153,12 @@ public class MatchTeamManagerPanel extends JPanel {
         cachedEntries.clear();
 
         try {
-            cachedEntries = matchTeamDAO.getAllMatchTeams();
+            Match selectedMatch = (Match) matchCombo.getSelectedItem();
+            if (selectedMatch != null) {
+                cachedEntries = matchTeamDAO.getMatchTeamsForMatch(selectedMatch.getMatchId());
+            } else {
+                cachedEntries = matchTeamDAO.getAllMatchTeams();
+            }
             for (MatchTeam entry : cachedEntries) {
                 tableModel.addRow(new Object[]{
                         entry.getMatchLabel(),
@@ -168,7 +175,14 @@ public class MatchTeamManagerPanel extends JPanel {
     private void handleAdd() {
         try {
             MatchTeam entry = formToEntry();
+            boolean wantsHome = entry.isHomeTeam();
+            if (wantsHome) {
+                entry.setHomeTeam(false);
+            }
             matchTeamDAO.insertMatchTeam(entry);
+            if (wantsHome) {
+                matchTeamDAO.assignHomeTeam(entry.getMatchId(), entry.getTeamId());
+            }
             showInfo("Entry saved.");
             reloadTable();
             clearForm();
@@ -185,7 +199,14 @@ public class MatchTeamManagerPanel extends JPanel {
 
         try {
             MatchTeam entry = formToEntry();
+            boolean wantsHome = entry.isHomeTeam();
+            if (wantsHome) {
+                entry.setHomeTeam(false);
+            }
             matchTeamDAO.updateMatchTeam(entry, selectedMatchId, selectedTeamId);
+            if (wantsHome) {
+                matchTeamDAO.assignHomeTeam(entry.getMatchId(), entry.getTeamId());
+            }
             showInfo("Entry updated.");
             reloadTable();
             clearForm();

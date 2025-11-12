@@ -19,14 +19,13 @@ public class CustomerPortalFrame extends JFrame {
 
         UAAPHeaderPanel headerPanel = new UAAPHeaderPanel(
                 "UAAP Customer Portal",
-                "Secure tickets or request refunds",    
+                "Secure verified tickets for UAAP events",
                 () -> UAAPApp.navigateToMainMenu(this)
         );
         root.add(headerPanel, BorderLayout.NORTH);
 
         JTabbedPane tabs = new JTabbedPane();
         tabs.addTab("Purchase Ticket", new TicketPurchasePanel());
-        tabs.addTab("Request Refund", new TicketRefundPanel());
 
         UAAPTheme.styleTabPane(tabs);
         UAAPTheme.elevate(tabs);

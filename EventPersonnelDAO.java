@@ -17,6 +17,7 @@ public class EventPersonnelDAO {
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
+            ensureMatchAlignment(conn, personnel.getMatchId(), personnel.getEventId());
             bindPersonnel(ps, personnel);
             ps.executeUpdate();
 
@@ -75,6 +76,7 @@ public class EventPersonnelDAO {
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
+            ensureMatchAlignment(conn, personnel.getMatchId(), personnel.getEventId());
             bindPersonnel(ps, personnel);
             ps.setInt(9, personnel.getPersonnelId());
             ps.executeUpdate();
@@ -111,6 +113,25 @@ public class EventPersonnelDAO {
             ps.setInt(8, personnel.getMatchId());
         } else {
             ps.setNull(8, Types.INTEGER);
+        }
+    }
+
+    private void ensureMatchAlignment(Connection conn, Integer matchId, int eventId) throws SQLException {
+        if (matchId == null) {
+            return;
+        }
+        try (PreparedStatement ps = conn.prepareStatement(
+                "SELECT event_id FROM `match` WHERE match_id = ?")) {
+            ps.setInt(1, matchId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    throw new IllegalArgumentException("Selected match no longer exists.");
+                }
+                int matchEventId = rs.getInt("event_id");
+                if (matchEventId != eventId) {
+                    throw new IllegalArgumentException("Match must belong to the same event as the personnel assignment.");
+                }
+            }
         }
     }
 }

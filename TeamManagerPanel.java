@@ -20,7 +20,7 @@ public class TeamManagerPanel extends JPanel {
     private DefaultTableModel tableModel;
 
     private JTextField idField;
-    private JTextField nameField;
+    private JComboBox<String> nameField;
     private JTextField seasonsField;
     private JTextField winsField;
     private JTextField lossesField;
@@ -44,8 +44,8 @@ public class TeamManagerPanel extends JPanel {
         idField = new JTextField();
         idField.setEditable(false);
         idField.setToolTipText("Auto-filled when you select a team.");
-        nameField = new JTextField();
-        nameField.setToolTipText("Enter the official team name.");
+        nameField = new JComboBox<>(TeamDAO.getAllowedTeamNames().toArray(new String[0]));
+        nameField.setToolTipText("Select the official UAAP team name.");
         seasonsField = new JTextField("0");
         seasonsField.setToolTipText("Total seasons the team has played.");
         winsField = new JTextField("0");
@@ -85,7 +85,7 @@ public class TeamManagerPanel extends JPanel {
                 int row = table.getSelectedRow();
                 if (row >= 0) {
                     idField.setText(String.valueOf(tableModel.getValueAt(row, 0)));
-                    nameField.setText(String.valueOf(tableModel.getValueAt(row, 1)));
+                    nameField.setSelectedItem(String.valueOf(tableModel.getValueAt(row, 1)));
                     seasonsField.setText(String.valueOf(tableModel.getValueAt(row, 2)));
                     winsField.setText(String.valueOf(tableModel.getValueAt(row, 3)));
                     lossesField.setText(String.valueOf(tableModel.getValueAt(row, 4)));
@@ -196,10 +196,11 @@ public class TeamManagerPanel extends JPanel {
     }
 
     private Team formToTeam(boolean includeId) {
-        String name = nameField.getText().trim();
-        if (name.isEmpty()) {
+        String name = (String) nameField.getSelectedItem();
+        if (name == null || name.trim().isEmpty()) {
             throw new IllegalArgumentException("Team name is required.");
         }
+        name = name.trim();
 
         int seasons = parseNonNegativeInt(seasonsField, "Seasons played");
         int wins = parseNonNegativeInt(winsField, "Wins");
@@ -254,7 +255,9 @@ public class TeamManagerPanel extends JPanel {
 
     private void clearForm() {
         idField.setText("");
-        nameField.setText("");
+        if (nameField.getItemCount() > 0) {
+            nameField.setSelectedIndex(0);
+        }
         seasonsField.setText("0");
         winsField.setText("0");
         lossesField.setText("0");

@@ -132,4 +132,30 @@ public class MatchTeamDAO {
             ps.executeUpdate();
         }
     }
+
+    public void assignHomeTeam(int matchId, int teamId) throws SQLException {
+        try (Connection conn = Database.getConnection()) {
+            boolean originalAutoCommit = conn.getAutoCommit();
+            conn.setAutoCommit(false);
+            try {
+                try (PreparedStatement clear = conn.prepareStatement(
+                        "UPDATE match_team SET is_home = FALSE WHERE match_id = ?")) {
+                    clear.setInt(1, matchId);
+                    clear.executeUpdate();
+                }
+                try (PreparedStatement setHome = conn.prepareStatement(
+                        "UPDATE match_team SET is_home = TRUE WHERE match_id = ? AND team_id = ?")) {
+                    setHome.setInt(1, matchId);
+                    setHome.setInt(2, teamId);
+                    setHome.executeUpdate();
+                }
+                conn.commit();
+            } catch (SQLException ex) {
+                conn.rollback();
+                throw ex;
+            } finally {
+                conn.setAutoCommit(originalAutoCommit);
+            }
+        }
+    }
 }

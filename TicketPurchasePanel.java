@@ -375,10 +375,15 @@ public class TicketPurchasePanel extends JPanel {
     }
 
     private void validateNewCustomerFields() {
-        if (firstNameField.getText().trim().isEmpty() ||
-                lastNameField.getText().trim().isEmpty() ||
-                emailField.getText().trim().isEmpty()) {
-            throw new IllegalArgumentException("First name, last name, and email are required for new customers.");
+        String first = firstNameField.getText().trim();
+        String last = lastNameField.getText().trim();
+        String email = emailField.getText().trim();
+        String phone = phoneField.getText().trim();
+        if (first.isEmpty() || last.isEmpty()) {
+            throw new IllegalArgumentException("First and last name are required for new customers.");
+        }
+        if (email.isEmpty() && phone.isEmpty()) {
+            throw new IllegalArgumentException("Provide at least one contact detail (email or phone) for the new customer.");
         }
     }
 

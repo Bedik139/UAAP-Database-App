@@ -22,6 +22,7 @@ public class MatchSpotlightPanel extends JPanel {
 
     private final MatchTeamDAO matchTeamDAO = new MatchTeamDAO();
     private final JPanel teamStack = new JPanel();
+    private final JLabel headlineLabel = new JLabel();
     private String headline = "Select a match";
     private float pulse;
 
@@ -33,6 +34,13 @@ public class MatchSpotlightPanel extends JPanel {
 
         teamStack.setOpaque(false);
         teamStack.setLayout(new BoxLayout(teamStack, BoxLayout.Y_AXIS));
+        headlineLabel.setOpaque(false);
+        headlineLabel.setFont(new Font("Segoe UI Semibold", Font.PLAIN, 13));
+        headlineLabel.setForeground(new Color(240, 255, 250));
+        headlineLabel.setBorder(BorderFactory.createEmptyBorder(12, 16, 4, 16));
+        headlineLabel.setText(headline);
+
+        add(headlineLabel, BorderLayout.NORTH);
         add(teamStack, BorderLayout.CENTER);
 
         Timer timer = new Timer(80, e -> {
@@ -46,6 +54,7 @@ public class MatchSpotlightPanel extends JPanel {
         teamStack.removeAll();
         if (matchId <= 0) {
             headline = "Select a match to ignite the artboard.";
+            headlineLabel.setText(headline);
             revalidate();
             repaint();
             return;
@@ -65,6 +74,7 @@ public class MatchSpotlightPanel extends JPanel {
         } catch (SQLException ex) {
             headline = "Unable to load team art (" + ex.getMessage() + ")";
         }
+        headlineLabel.setText(headline);
         revalidate();
         repaint();
     }
@@ -113,8 +123,6 @@ public class MatchSpotlightPanel extends JPanel {
         g2.setPaint(paint);
         g2.fillRoundRect(0, 0, width, height, 32, 32);
 
-        g2.setColor(new Color(255, 255, 255, 35));
-        g2.drawString(headline, 24, 36);
         g2.dispose();
         super.paintComponent(g);
     }

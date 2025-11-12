@@ -1,5 +1,5 @@
-﻿DROP SCHEMA IF EXISTS UAAPDBSQL;
-CREATE SCHEMA UAAPDBSQL;
+DROP DATABASE IF EXISTS UAAPDBSQL;
+CREATE DATABASE UAAPDBSQL;
 USE UAAPDBSQL;
 
 CREATE TABLE event (
@@ -17,7 +17,16 @@ CREATE TABLE event (
 
 CREATE TABLE team (
   team_id             INT          NOT NULL AUTO_INCREMENT,
-  team_name           VARCHAR(120) NOT NULL,
+  team_name           ENUM(
+                          'De La Salle Green Archers',
+                          'Ateneo Blue Eagles',
+                          'UP Fighting Maroons',
+                          'UST Growling Tigers',
+                          'Far Eastern University Tamaraws',
+                          'University of the East Red Warriors',
+                          'National University Bulldogs',
+                          'Adamson Soaring Falcons'
+                        ) NOT NULL,
   seasons_played      INT          NOT NULL DEFAULT 0,
   standing_wins       INT          NOT NULL DEFAULT 0,
   standing_losses     INT          NOT NULL DEFAULT 0,
@@ -74,8 +83,7 @@ CREATE TABLE match_team (
   CONSTRAINT fk_mt_team
     FOREIGN KEY (team_id) REFERENCES team(team_id)
     ON DELETE RESTRICT ON UPDATE CASCADE,
-  CONSTRAINT ck_mt_is_home CHECK (is_home IN (0,1)),
-  CONSTRAINT uq_match_home_slot UNIQUE (match_id,is_home)
+  CONSTRAINT ck_mt_is_home CHECK (is_home IN (0,1))
 );
 
 CREATE TABLE match_quarter_score (
@@ -129,6 +137,10 @@ CREATE TABLE customer (
   preferred_sport      ENUM('Basketball','Volleyball'),
   customer_status      VARCHAR(20),
   payment_method       VARCHAR(30),
+  CONSTRAINT ck_customer_contact CHECK (
+          (phone_number IS NOT NULL AND phone_number <> '')
+       OR (email IS NOT NULL AND email <> '')
+  ),
   PRIMARY KEY (customer_id),
   UNIQUE KEY uq_customer_email (email)
 );
@@ -155,7 +167,7 @@ CREATE TABLE seat_and_ticket (
   sale_status            ENUM('Sold','Refunded') NOT NULL DEFAULT 'Sold',
   refund_datetime        TIMESTAMP     NULL,
   PRIMARY KEY (seat_and_ticket_rec_id),
-  UNIQUE KEY uq_active_sale (event_id, seat_id, sale_status),
+  UNIQUE KEY uq_event_seat (event_id, seat_id),
   KEY idx_sat_seat (seat_id),
   KEY idx_sat_event (event_id),
   KEY idx_sat_customer (customer_id),
@@ -223,7 +235,11 @@ VALUES
 ('De La Salle Green Archers', 12, 8, 2, 10),
 ('Ateneo Blue Eagles', 12, 7, 3, 10),
 ('UP Fighting Maroons', 12, 6, 4, 10),
-('UST Growling Tigers', 12, 4, 6, 10);
+('UST Growling Tigers', 12, 4, 6, 10),
+('Far Eastern University Tamaraws', 12, 6, 4, 10),
+('University of the East Red Warriors', 12, 3, 7, 10),
+('National University Bulldogs', 12, 5, 5, 10),
+('Adamson Soaring Falcons', 12, 4, 6, 10);
 
 INSERT INTO event (event_name, sport, match_date, event_time_start, event_time_end, venue_address, venue_capacity, event_status)
 VALUES
@@ -294,5 +310,4 @@ VALUES
 -- Align seat availability with sample transactions
 UPDATE seat SET seat_status = 'Sold' WHERE seat_id IN (1, 2);
 UPDATE seat SET seat_status = 'Available' WHERE seat_id = 4;
-
 

@@ -301,6 +301,9 @@ public class EventPersonnelManagerPanel extends JPanel {
         if (event == null) {
             throw new IllegalArgumentException("Select an event.");
         }
+        if (match != null && match.getEventId() != event.getEventId()) {
+            throw new IllegalArgumentException("Selected match does not belong to the chosen event.");
+        }
 
         EventPersonnel personnel = new EventPersonnel(
                 firstName,

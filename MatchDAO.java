@@ -23,6 +23,7 @@ public class MatchDAO {
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
+            validateMatchConstraints(conn, match, null);
             bindMatch(ps, match);
             ps.setString(6, match.getStatus());
             ps.setString(7, match.getScoreSummary());
@@ -78,6 +79,7 @@ public class MatchDAO {
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
+            validateMatchConstraints(conn, match, match.getMatchId());
             bindMatch(ps, match);
             ps.setString(6, match.getStatus());
             ps.setString(7, match.getScoreSummary());
@@ -132,4 +134,71 @@ public class MatchDAO {
                 rs.getString("score_summary")
         );
     }
+
+    private void validateMatchConstraints(Connection conn, Match match, Integer excludeMatchId) throws SQLException {
+        EventWindow window = fetchEventWindow(conn, match.getEventId());
+        if (window == null) {
+            throw new IllegalArgumentException("Event not found for the selected match.");
+        }
+        if (match.getMatchDate() == null || !match.getMatchDate().equals(window.matchDate())) {
+            throw new IllegalArgumentException("Match date must align with the parent event date.");
+        }
+        if (match.getMatchTimeStart() == null || match.getMatchTimeEnd() == null ||
+                !match.getMatchTimeEnd().after(match.getMatchTimeStart())) {
+            throw new IllegalArgumentException("Match end time must be after the start time.");
+        }
+        if (match.getMatchTimeStart().before(window.eventStart()) ||
+                match.getMatchTimeEnd().after(window.eventEnd())) {
+            throw new IllegalArgumentException("Match times must fall within the parent event schedule.");
+        }
+        ensureNoOverlap(conn, match, excludeMatchId);
+    }
+
+    private EventWindow fetchEventWindow(Connection conn, int eventId) throws SQLException {
+        String sql = "SELECT match_date, event_time_start, event_time_end, sport FROM event WHERE event_id = ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, eventId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return new EventWindow(
+                            rs.getDate("match_date"),
+                            rs.getTime("event_time_start"),
+                            rs.getTime("event_time_end"),
+                            rs.getString("sport")
+                    );
+                }
+            }
+        }
+        return null;
+    }
+
+    private void ensureNoOverlap(Connection conn, Match match, Integer excludeMatchId) throws SQLException {
+        StringBuilder sql = new StringBuilder(
+                "SELECT match_time_start, match_time_end FROM `match` WHERE event_id = ? AND match_date = ?");
+        if (excludeMatchId != null) {
+            sql.append(" AND match_id <> ?");
+        }
+        try (PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+            ps.setInt(1, match.getEventId());
+            ps.setDate(2, match.getMatchDate());
+            if (excludeMatchId != null) {
+                ps.setInt(3, excludeMatchId);
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Time existingStart = rs.getTime("match_time_start");
+                    Time existingEnd = rs.getTime("match_time_end");
+                    if (timesOverlap(match.getMatchTimeStart(), match.getMatchTimeEnd(), existingStart, existingEnd)) {
+                        throw new IllegalArgumentException("Match times overlap with another match under the same event.");
+                    }
+                }
+            }
+        }
+    }
+
+    private boolean timesOverlap(Time startA, Time endA, Time startB, Time endB) {
+        return startA.before(endB) && endA.after(startB);
+    }
+
+    private record EventWindow(Date matchDate, Time eventStart, Time eventEnd, String sport) {}
 }

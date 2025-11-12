@@ -31,15 +31,27 @@ public class TicketingService {
 
                 Seat seat = fetchSeat(conn, request.getSeatId(), true);
                 ensureSeatAvailable(conn, request.getEventId(), seat.getSeatId());
+                Ticket seatTicket = seat.getTicketTier();
+                if (seatTicket == null) {
+                    throw new IllegalStateException("Seat is not linked to a ticket tier.");
+                }
 
                 int customerId = resolveCustomer(conn, request);
+                if (request.getQuantity() <= 0) {
+                    throw new IllegalArgumentException("Quantity must be greater than zero.");
+                }
+                if (request.getQuantity() > 2) {
+                    throw new IllegalArgumentException("Customers may only purchase up to two seats per transaction.");
+                }
+                request.setTicketId(seatTicket.getTicketId());
 
-                BigDecimal price = resolvePrice(conn, request.getTicketId(), request.getPriceOverride());
+                BigDecimal price = seatTicket.getEffectivePrice();
                 Timestamp saleTimestamp = request.getSaleTimestamp() != null
                         ? request.getSaleTimestamp()
                         : Timestamp.valueOf(LocalDateTime.now());
+                ensureSaleBeforeEventStart(event, match, saleTimestamp);
 
-                int saleId = insertSeatAndTicket(conn, request, customerId, price, saleTimestamp);
+                int saleId = insertSeatAndTicket(conn, request, customerId, request.getQuantity(), price, saleTimestamp);
                 updateSeatStatus(conn, seat.getSeatId(), "Sold");
 
                 conn.commit();
@@ -51,7 +63,9 @@ public class TicketingService {
                         seat,
                         event,
                         match,
+                        request.getQuantity(),
                         price,
+                        price.multiply(BigDecimal.valueOf(request.getQuantity())),
                         saleTimestamp
                 );
             } catch (Exception ex) {
@@ -67,43 +81,39 @@ public class TicketingService {
             conn.setAutoCommit(false);
 
             try {
-                SaleSnapshot sale = fetchSaleSnapshot(conn, saleRecordId, true);
-                if (sale == null) {
-                    throw new IllegalArgumentException("Ticket sale record not found.");
+                // Fetch the sale record
+                SeatAndTicket saleRecord = fetchSaleRecord(conn, saleRecordId, true);
+                if (saleRecord == null) {
+                    throw new IllegalArgumentException("Sale record not found.");
                 }
-                if (!"Sold".equalsIgnoreCase(sale.saleStatus())) {
-                    throw new IllegalStateException("Only tickets with status 'Sold' can be refunded.");
+                if (!saleRecord.isSold()) {
+                    throw new IllegalStateException("This ticket has already been refunded.");
                 }
 
-                Event event = fetchEvent(conn, sale.eventId(), false);
-                if (event == null) {
-                    throw new IllegalStateException("Event linked to the sale no longer exists.");
-                }
-                ensureRefundAllowed(event);
-
+                // Calculate refund amount
+                BigDecimal refundAmount = saleRecord.getTotalPrice();
                 Timestamp refundTimestamp = Timestamp.valueOf(LocalDateTime.now());
 
-                try (PreparedStatement ps = conn.prepareStatement(
-                        "UPDATE seat_and_ticket SET sale_status = 'Refunded', refund_datetime = ? WHERE seat_and_ticket_rec_id = ?")) {
-                    ps.setTimestamp(1, refundTimestamp);
-                    ps.setInt(2, saleRecordId);
-                    ps.executeUpdate();
-                }
+                // Update seat_and_ticket status to 'Refunded'
+                updateSaleStatus(conn, saleRecordId, "Refunded");
 
-                updateSeatStatus(conn, sale.seatId(), "Available");
-                insertRefundAudit(conn, saleRecordId, sale.priceSold(), refundTimestamp, reason, processedBy);
+                // Update seat status back to 'Available'
+                updateSeatStatus(conn, saleRecord.getSeatId(), "Available");
+
+                // Insert refund audit record
+                insertRefundAudit(conn, saleRecordId, refundAmount, reason, processedBy);
 
                 conn.commit();
                 conn.setAutoCommit(originalAutoCommit);
 
                 return new TicketRefundResult(
                         saleRecordId,
-                        sale.customerId(),
-                        sale.seatId(),
-                        sale.eventId(),
-                        sale.matchId(),
+                        saleRecord.getCustomerId(),
+                        saleRecord.getSeatId(),
+                        saleRecord.getEventId(),
+                        saleRecord.getMatchId(),
                         refundTimestamp,
-                        sale.priceSold(),
+                        refundAmount,
                         reason,
                         processedBy
                 );
@@ -111,6 +121,74 @@ public class TicketingService {
                 conn.rollback();
                 throw ex instanceof SQLException ? (SQLException) ex : new SQLException(ex.getMessage(), ex);
             }
+        }
+    }
+
+    private SeatAndTicket fetchSaleRecord(Connection conn, int saleRecordId, boolean forUpdate) throws SQLException {
+        String sql = "SELECT sat.seat_and_ticket_rec_id, sat.seat_id, sat.event_id, sat.customer_id, " +
+                "sat.sale_datetime, sat.quantity, sat.unit_price, sat.total_price, sat.ticket_id, " +
+                "sat.match_id, sat.sale_status, " +
+                "c.customer_first_name, c.customer_last_name, " +
+                "e.event_name, " +
+                "s.seat_type " +
+                "FROM seat_and_ticket sat " +
+                "INNER JOIN customer c ON sat.customer_id = c.customer_id " +
+                "INNER JOIN event e ON sat.event_id = e.event_id " +
+                "INNER JOIN seat s ON sat.seat_id = s.seat_id " +
+                "WHERE sat.seat_and_ticket_rec_id = ? " + (forUpdate ? "FOR UPDATE" : "");
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, saleRecordId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    SeatAndTicket record = new SeatAndTicket();
+                    record.setRecordId(rs.getInt("seat_and_ticket_rec_id"));
+                    record.setSeatId(rs.getInt("seat_id"));
+                    record.setEventId(rs.getInt("event_id"));
+                    record.setCustomerId(rs.getInt("customer_id"));
+                    record.setSaleDatetime(rs.getTimestamp("sale_datetime"));
+                    record.setQuantity(rs.getInt("quantity"));
+                    record.setUnitPrice(rs.getBigDecimal("unit_price"));
+                    record.setTotalPrice(rs.getBigDecimal("total_price"));
+                    record.setTicketId(rs.getInt("ticket_id"));
+                    
+                    Integer matchId = (Integer) rs.getObject("match_id");
+                    record.setMatchId(matchId);
+                    
+                    record.setSaleStatus(rs.getString("sale_status"));
+                    record.setCustomerName(rs.getString("customer_first_name") + " " + rs.getString("customer_last_name"));
+                    record.setEventName(rs.getString("event_name"));
+                    record.setSeatLabel(rs.getString("seat_type"));
+                    
+                    return record;
+                }
+            }
+        }
+        return null;
+    }
+
+    private void updateSaleStatus(Connection conn, int saleRecordId, String status) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement(
+                "UPDATE seat_and_ticket SET sale_status = ? WHERE seat_and_ticket_rec_id = ?")) {
+            ps.setString(1, status);
+            ps.setInt(2, saleRecordId);
+            ps.executeUpdate();
+        }
+    }
+
+    private void insertRefundAudit(Connection conn, int saleRecordId, BigDecimal refundAmount, 
+                                   String reason, String processedBy) throws SQLException {
+        String sql = "INSERT INTO ticket_refund_audit " +
+                "(seat_and_ticket_rec_id, refund_amount, reason, processed_by) " +
+                "VALUES (?, ?, ?, ?)";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, saleRecordId);
+            ps.setBigDecimal(2, refundAmount);
+            ps.setString(3, reason);
+            ps.setString(4, processedBy);
+            ps.executeUpdate();
         }
     }
 
@@ -142,7 +220,7 @@ public class TicketingService {
 
     private Match fetchMatch(Connection conn, int matchId, boolean forUpdate) throws SQLException {
         String sql = "SELECT m.match_id, m.event_id, e.event_name, m.match_type, " +
-                "m.match_date, m.match_time_start, m.match_time_end, m.status, m.score_summary " +
+t                "m.match_date, m.match_time_start, m.match_time_end, m.status, m.score_summary " +
                 "FROM `match` m INNER JOIN event e ON m.event_id = e.event_id " +
                 "WHERE m.match_id = ? " + (forUpdate ? "FOR UPDATE" : "");
 
@@ -169,20 +247,28 @@ public class TicketingService {
     }
 
     private Seat fetchSeat(Connection conn, int seatId, boolean forUpdate) throws SQLException {
-        String sql = "SELECT seat_id, seat_type, seat_section, venue_address, seat_status " +
-                "FROM seat WHERE seat_id = ? " + (forUpdate ? "FOR UPDATE" : "");
+        String sql = "SELECT s.seat_id, s.seat_type, s.venue_address, s.seat_status, " +
+                "t.ticket_id, t.default_price, t.price, t.ticket_status " +
+                "FROM seat s INNER JOIN ticket t ON s.ticket_id = t.ticket_id " +
+                "WHERE s.seat_id = ? " + (forUpdate ? "FOR UPDATE" : "");
 
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, seatId);
 
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
+                    Ticket ticket = new Ticket(
+                            rs.getInt("ticket_id"),
+                            rs.getBigDecimal("default_price"),
+                            rs.getBigDecimal("price"),
+                            rs.getString("ticket_status")
+                    );
                     return new Seat(
                             rs.getInt("seat_id"),
                             rs.getString("seat_type"),
-                            rs.getString("seat_section"),
                             rs.getString("venue_address"),
-                            rs.getString("seat_status")
+                            rs.getString("seat_status"),
+                            ticket
                     );
                 }
             }
@@ -190,8 +276,27 @@ public class TicketingService {
         throw new IllegalArgumentException("Seat not found.");
     }
 
+    private void ensureSaleBeforeEventStart(Event event, Match match, Timestamp saleTimestamp) {
+        if (event == null || saleTimestamp == null) {
+            return;
+        }
+        LocalDateTime cutoff = LocalDateTime.of(
+                event.getMatchDate().toLocalDate(),
+                event.getEventTimeStart().toLocalTime()
+        );
+        if (match != null) {
+            cutoff = LocalDateTime.of(
+                    match.getMatchDate().toLocalDate(),
+                    match.getMatchTimeStart().toLocalTime()
+            );
+        }
+        if (saleTimestamp.toLocalDateTime().isAfter(cutoff)) {
+            throw new IllegalStateException("Tickets can no longer be sold after the start time.");
+        }
+    }
+
     private void ensureSeatAvailable(Connection conn, int eventId, int seatId) throws SQLException {
-        String sql = "SELECT 1 FROM seat_and_ticket WHERE event_id = ? AND seat_id = ? AND sale_status = 'Sold'";
+        String sql = "SELECT 1 FROM seat_and_ticket WHERE event_id = ? AND seat_id = ?";
 
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, eventId);
@@ -209,10 +314,11 @@ public class TicketingService {
         if (request.getExistingCustomerId() != null) {
             return request.getExistingCustomerId();
         }
+        ensureContactDetailsPresent(request.getEmail(), request.getPhone());
 
         String sql = "INSERT INTO customer " +
                 "(customer_first_name, customer_last_name, phone_number, email, organization, " +
-                "registration_date, preferred_sport, customer_status, payment_method) " +
+                "registration_date, preferred_team, customer_status, payment_method) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -224,7 +330,7 @@ public class TicketingService {
             ps.setDate(6, request.getRegistrationDate() != null
                     ? request.getRegistrationDate()
                     : java.sql.Date.valueOf(LocalDate.now()));
-            ps.setString(7, request.getPreferredSport());
+            ps.setString(7, request.getPreferredTeam());
             ps.setString(8, request.getCustomerStatus());
             ps.setString(9, request.getPaymentMethod());
 
@@ -240,47 +346,29 @@ public class TicketingService {
         throw new SQLException("Failed to create customer record.");
     }
 
-    private BigDecimal resolvePrice(Connection conn, int ticketId, BigDecimal override) throws SQLException {
-        if (override != null) {
-            return override;
-        }
-
-        String sql = "SELECT COALESCE(price, default_price) AS effective_price FROM ticket WHERE ticket_id = ?";
-
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, ticketId);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getBigDecimal("effective_price");
-                }
-            }
-        }
-
-        throw new IllegalArgumentException("Ticket template not found.");
-    }
-
     private int insertSeatAndTicket(Connection conn,
                                     TicketPurchaseRequest request,
                                     int customerId,
-                                    BigDecimal price,
+                                    int quantity,
+                                    BigDecimal unitPrice,
                                     Timestamp saleTimestamp) throws SQLException {
         String sql = "INSERT INTO seat_and_ticket " +
-                "(seat_id, event_id, customer_id, sale_datetime, price_sold, ticket_id, match_id, sale_status, refund_datetime) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, 'Sold', NULL)";
+                "(seat_id, event_id, customer_id, sale_datetime, quantity, unit_price, ticket_id, match_id, sale_status) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Sold')";
 
         try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setInt(1, request.getSeatId());
             ps.setInt(2, request.getEventId());
             ps.setInt(3, customerId);
             ps.setTimestamp(4, saleTimestamp);
-            ps.setBigDecimal(5, price);
-            ps.setInt(6, request.getTicketId());
+            ps.setInt(5, quantity);
+            ps.setBigDecimal(6, unitPrice);
+            ps.setInt(7, request.getTicketId());
 
             if (request.getMatchId() != null) {
-                ps.setInt(7, request.getMatchId());
+                ps.setInt(8, request.getMatchId());
             } else {
-                ps.setNull(7, java.sql.Types.INTEGER);
+                ps.setNull(8, java.sql.Types.INTEGER);
             }
 
             ps.executeUpdate();
@@ -304,48 +392,11 @@ public class TicketingService {
         }
     }
 
-    private SaleSnapshot fetchSaleSnapshot(Connection conn, int saleRecordId, boolean forUpdate) throws SQLException {
-        String sql = "SELECT seat_and_ticket_rec_id, seat_id, event_id, customer_id, match_id, " +
-                "sale_status, price_sold FROM seat_and_ticket WHERE seat_and_ticket_rec_id = ? " +
-                (forUpdate ? "FOR UPDATE" : "");
-
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, saleRecordId);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return new SaleSnapshot(
-                            rs.getInt("seat_and_ticket_rec_id"),
-                            rs.getInt("seat_id"),
-                            rs.getInt("event_id"),
-                            rs.getInt("customer_id"),
-                            (Integer) rs.getObject("match_id"),
-                            rs.getString("sale_status"),
-                            rs.getBigDecimal("price_sold")
-                    );
-                }
-            }
-        }
-        return null;
-    }
-
-    private void insertRefundAudit(Connection conn,
-                                   int saleId,
-                                   BigDecimal amount,
-                                   Timestamp refundTimestamp,
-                                   String reason,
-                                   String processedBy) throws SQLException {
-        String sql = "INSERT INTO ticket_refund_audit " +
-                "(seat_and_ticket_rec_id, refund_datetime, refund_amount, reason, processed_by) " +
-                "VALUES (?, ?, ?, ?, ?)";
-
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, saleId);
-            ps.setTimestamp(2, refundTimestamp);
-            ps.setBigDecimal(3, amount);
-            ps.setString(4, reason);
-            ps.setString(5, processedBy);
-            ps.executeUpdate();
+    private void ensureContactDetailsPresent(String email, String phone) {
+        boolean hasPhone = phone != null && !phone.trim().isEmpty();
+        boolean hasEmail = email != null && !email.trim().isEmpty();
+        if (!hasPhone && !hasEmail) {
+            throw new IllegalArgumentException("Provide at least one contact detail (phone or email) for the customer.");
         }
     }
 
@@ -376,17 +427,6 @@ public class TicketingService {
         }
     }
 
-    private void ensureRefundAllowed(Event event) {
-        LocalDateTime eventStart = LocalDateTime.of(
-                event.getMatchDate().toLocalDate(),
-                event.getEventTimeStart().toLocalTime()
-        );
-
-        if (LocalDateTime.now().isAfter(eventStart)) {
-            throw new IllegalStateException("Event already started. Refunds are no longer allowed.");
-        }
-    }
-
     public static class TicketPurchaseRequest {
         private Integer existingCustomerId;
         private String firstName;
@@ -395,7 +435,7 @@ public class TicketingService {
         private String email;
         private String organization;
         private java.sql.Date registrationDate;
-        private String preferredSport;
+        private String preferredTeam;
         private String customerStatus;
         private String paymentMethod;
 
@@ -403,7 +443,7 @@ public class TicketingService {
         private Integer matchId;
         private int seatId;
         private int ticketId;
-        private BigDecimal priceOverride;
+        private int quantity = 1;
         private Timestamp saleTimestamp;
 
         public Integer getExistingCustomerId() {
@@ -462,12 +502,12 @@ public class TicketingService {
             this.registrationDate = registrationDate;
         }
 
-        public String getPreferredSport() {
-            return preferredSport;
+        public String getPreferredTeam() {
+            return preferredTeam;
         }
 
-        public void setPreferredSport(String preferredSport) {
-            this.preferredSport = preferredSport;
+        public void setPreferredTeam(String preferredTeam) {
+            this.preferredTeam = preferredTeam;
         }
 
         public String getCustomerStatus() {
@@ -518,12 +558,12 @@ public class TicketingService {
             this.ticketId = ticketId;
         }
 
-        public BigDecimal getPriceOverride() {
-            return priceOverride;
+        public int getQuantity() {
+            return quantity;
         }
 
-        public void setPriceOverride(BigDecimal priceOverride) {
-            this.priceOverride = priceOverride;
+        public void setQuantity(int quantity) {
+            this.quantity = quantity;
         }
 
         public Timestamp getSaleTimestamp() {
@@ -540,7 +580,9 @@ public class TicketingService {
                                        Seat seat,
                                        Event event,
                                        Match match,
-                                       BigDecimal pricePaid,
+                                       int quantity,
+                                       BigDecimal unitPrice,
+                                       BigDecimal totalAmount,
                                        Timestamp saleTimestamp) {}
 
     public record TicketRefundResult(int saleRecordId,
@@ -552,12 +594,4 @@ public class TicketingService {
                                      BigDecimal amountRefunded,
                                      String reason,
                                      String processedBy) {}
-
-    private record SaleSnapshot(int saleId,
-                                int seatId,
-                                int eventId,
-                                int customerId,
-                                Integer matchId,
-                                String saleStatus,
-                                BigDecimal priceSold) {}
 }
