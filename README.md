@@ -1,60 +1,196 @@
-﻿# UAAP Management System
+# UAAP Event Management System
 
-Lightweight Swing UI for managing UAAP events, matches, teams, tickets, and related records backed by a MySQL database.
+Replaces error-prone spreadsheets with a robust database system for:
+- **Event & Match Scheduling** - Prevent double-booking with automated venue/time validation
+- **Ticket Management** - Real-time seat availability with transaction-safe booking
+- **Team & Player Tracking** - Live scores, standings, and individual statistics
+- **Revenue Reporting** - Comprehensive analytics on sales, occupancy, and performance
 
-## Prerequisites
-- Java Development Kit (JDK) 11 or newer (tested with JDK 17) for `javac`, `java`, and Swing.
-- MySQL Server 8.0+ running locally or reachable over the network.
-- MySQL Connector/J 9.5.0 (already included in `lib/mysql-connector-j-9.5.0.jar`).
-- An IDE or terminal that can compile Java with an external classpath.
+## 📋 Prerequisites
 
-## Required Files
-- `UAAPApp.java` (main entry point that boots the Swing application).
-- DAO/domain classes in the project root (`EventDAO.java`, `MatchDAO.java`, `TicketDAO.java`, etc.). Keep these source files in the same package-less directory when compiling.
-- `Database.java` for JDBC URL, username, and password. Update the `URL`, `USER`, and `PASSWORD` constants to match your MySQL instance before compiling.
-- `lib/mysql-connector-j-9.5.0.jar` must stay in `lib/` and be added to the runtime classpath.
+- **Java JDK 11+** (tested with JDK 17)
+- **MySQL 8.0+** (local or network)
+- **MySQL Connector/J 9.5.0** (included in `lib/`)
 
-## Database Setup
-1. Create a database named `UAAPDBSQL` (or adjust `Database.java`).
-2. Provision the tables referenced by the DAOs with compatible columns and types:
-   - `event(event_id, event_name, sport, match_date, event_time_start, event_time_end, venue_address)`
-   - ``match``(match_id, event_id, match_type, match_date, match_time_start, match_time_end)
-   - `match_team(match_id, team_id, is_home, team_score)`
-   - `team(team_id, team_name, seasons_played, standing_wins, standing_losses, total_games_played)`
-   - `player(player_id, team_id, player_first_name, player_last_name, player_number, age, position, weight, height, individual_score)`
-   - `match_quarter_score(match_id, team_id, quarter_no, quarter_points)`
-   - `match_set_score(match_id, team_id, set_no, set_points)`
-   - `seat(seat_id, seat_type,  venue_address, seat_status, ticket_id)`
-   - `ticket(ticket_id, default_price, price, ticket_status)`
-   - `seat_and_ticket(seat_and_ticket_rec_id, seat_id, event_id, customer_id, sale_datetime, quantity, unit_price, total_price, ticket_id, match_id)` (`total_price` is a stored generated column: `quantity × unit_price`)
-   - `customer(customer_id, customer_first_name, customer_last_name, phone_number, email, organization, registration_date, preferred_team, customer_status, payment_method)` (`preferred_team` is an ENUM covering the eight UAAP squads)
-   - `event_personnel(personnel_id, personnel_first_name, personnel_last_name, availability_status, role, affiliation, contact_no, event_id, match_id)`
+## 🗄️ Database Setup
 
-   Default ticket tiers bundled with the seed data:
-   - Ticket **#1** � General Admission / Upper Box (`?500`)
-   - Ticket **#2** � Lower Box (`?750`)
-   - Ticket **#3** � Courtside (`?1200`)
+### 1. Create Database
+```sql
+CREATE DATABASE uaap_db;
+USE uaap_db;
+```
 
-   Every seat row links to one of these tickets (`seat.ticket_id`), and every sale inherits its price from the linked seat.
+### 2. Run Schema
+Execute `UAAPDB.sql` to create all tables with proper constraints:
 
-3. Configure foreign keys to align with the relationships used in the DAOs (e.g., `match.event_id → event.event_id`, `player.team_id → team.team_id`, etc.).
+**Core Tables:**
+- `event` - Event details (sport, venue, dates, capacity, status)
+- `match` - Individual matches linked to events
+- `match_team` - Participating teams per match with scores
+- `team` - UAAP teams with standings (wins/losses/games played)
+- `player` - Player roster with biometrics and individual scores
+- `venue` - Venue information and capacities
+
+**Scoring Tables:**
+- `match_quarter_score` - Basketball quarter-by-quarter breakdown
+- `match_set_score` - Volleyball set-by-set breakdown (1-5 sets)
+
+**Ticketing Tables:**
+- `seat` - Physical seats with type, venue, status, pricing
+- `ticket` - Ticket tiers (General Admission ₱500, Lower Box ₱750, Courtside ₱1200)
+- `seat_and_ticket` - Sales transactions with auto-calculated `total_price` (quantity × unit_price)
+- `customer` - Customer profiles with preferred sport and payment methods
+- `refund_audit` - Refund logging and audit trail
+
+**Operations Tables:**
+- `event_personnel` - Staff assignments (ushers, referees, entertainers, etc.)
+
+### 3. Update Database Connection
+Edit `Database.java` credentials:
+```java
+private static final String URL = "jdbc:mysql://localhost:3306/uaap_db";
+private static final String USER = "your_username";
+private static final String PASSWORD = "your_password";
+```
 
 ## Compile and Run
-Compile all sources from the project root, including the MySQL driver on the classpath:
 
+### Compile (Windows)
 ```powershell
-javac -cp "lib/mysql-connector-j-9.5.0.jar;." *.java
+javac -cp ".;lib/mysql-connector-j-9.5.0.jar" *.java
 ```
 
-Launch the Swing app after compilation:
-
-```powershell
-java -cp "lib/mysql-connector-j-9.5.0.jar;." UAAPApp
+### Compile (macOS/Linux)
+```bash
+javac -cp ".:lib/mysql-connector-j-9.5.0.jar" *.java
 ```
 
-> On macOS/Linux replace the classpath separator `;` with `:`.
+### Run
+```powershell
+java -cp ".;lib/mysql-connector-j-9.5.0.jar" UAAPApp
+```
 
-## Troubleshooting
-- If `ClassNotFoundException: com.mysql.cj.jdbc.Driver` appears, confirm the connector JAR path in the classpath.
-- Connection failures typically mean the MySQL credentials or host in `Database.java` need to be updated or the `UAAPDBSQL` schema/tables are missing.
+## Application Structure
 
+### **Launch Screen**
+Two portals: **Manager** (full control) | **Customer** (ticket operations)
+
+---
+
+### **MANAGER DASHBOARD** (11 Tabs)
+
+#### 1. **Events**
+- Create/edit events with sport presets, venue dropdowns
+- Status workflow: Scheduled → Active → Completed
+- Auto-filled venue capacity
+
+#### 2. **Matches**
+- Link matches to events, set type (Elimination/Semis/Finals)
+- Match Spotlight displays team crests
+
+#### 3. **Match Teams**
+- Assign home/away teams with live scoring
+- Team logos rendered inline
+
+#### 4. **Match Results**
+- Record final scores + optional summaries
+- Individual player point attribution
+- Cascading updates: match status, team standings, player totals
+
+#### 5. **Quarter Scores (Basketball)**
+- Manage quarter-by-quarter breakdown (Q1-Q4)
+- Auto-generated performance reports
+
+#### 6. **Set Scores (Volleyball)**
+- Set-by-set scoring (1-5 sets)
+- Formatted breakdown display
+
+#### 7. **Seat & Ticket**
+- Central sales console
+- Process refunds with automatic seat release
+- Match-specific ticket linking
+
+#### 8. **Event Personnel**
+- Staff management with role presets
+- Optional match assignments
+
+#### 9. **Teams**
+- Team rosters with auto-calculated W/L/Games
+- Season standings tracking
+
+#### 10. **Players**
+- Individual profiles: jersey #, biometrics, scores
+- Running statistics aggregation
+
+#### 11. **Reports** (5 Dashboards)
+- **Season Standings** - Win % sorted rankings
+- **Ticket Sales** - Date-range filtered transactions  
+- **Venue Utilization** - Monthly occupancy %
+- **Ticket Revenue** - Revenue breakdown by seat type
+- **Player Statistics** - Individual scoring leaders
+
+---
+
+### **CUSTOMER PORTAL** (2 Tabs)
+
+#### 1. **Purchase Ticket** (Max 2 tickets)
+**Workflow:**
+1. Select event → auto-filters scheduled matches
+2. Choose available seats
+3. Select ticket type (prices inherited from seat)
+4. Customer lookup or new entry
+5. **Transaction**: Seat locked → Sale recorded → Confirmation
+
+#### 2. **Request Refund**
+**Workflow:**
+1. Filter sold tickets by event
+2. Select sale → provide reason/agent
+3. **Validation**: Event not started yet
+4. **Transaction**: Status updated → Seat freed → Audit logged
+
+---
+
+
+## Database Transactions
+
+### Transaction 1: Scheduling a Match
+- Verifies event exists and is scheduled
+- Validates both teams exist
+- Checks venue availability (prevents time overlap)
+- Inserts match with proper constraints
+
+### Transaction 2: Purchasing a Ticket
+- Confirms match is open for ticketing
+- Locks available seat with `FOR UPDATE`
+- Creates/retrieves customer record
+- Records sale with audit trail
+- Marks seat as sold (atomic operation)
+
+## 🐛 Troubleshooting
+
+**ClassNotFoundException: com.mysql.cj.jdbc.Driver**
+- Verify `lib/mysql-connector-j-9.5.0.jar` is in classpath
+
+**Connection Failed**
+- Update credentials in `Database.java`
+- Ensure MySQL server is running
+- Verify `uaap_db` database exists
+
+**Compilation Errors**
+- Use correct classpath separator (`;` Windows, `:` Unix)
+- Ensure all `.java` files are in project root
+- Check JDK version (11+)
+
+## Default Ticket Tiers
+
+- **Ticket #1** - General Admission / Upper Box: ₱500
+- **Ticket #2** - Lower Box: ₱750  
+- **Ticket #3** - Courtside: ₱1200
+
+Prices are inherited from seat assignments and can be customized per venue/event.
+
+## UAAP Teams Supported
+
+Ateneo, De La Salle, FEU, UP, UST, NU, UE, Adamson
+
+---
