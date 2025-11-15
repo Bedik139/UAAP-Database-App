@@ -1,0 +1,384 @@
+================================================================================
+UAAP SPORTS MANAGEMENT APPLICATION - BUSINESS RULES DOCUMENTATION
+================================================================================
+
+DEFINITION:
+Business rules define how data can be created, stored, and manipulated. They are 
+used to ensure that the operations align with organizational policies. These can 
+be classified into two categories:
+
+================================================================================
+CATEGORY 1: STRUCTURAL/DATA INTEGRITY RULES
+(Enforced at database level through constraints)
+================================================================================
+
+ENTITY CONSTRAINTS
+--------------------------------------------------------------------------------
+1.  Team uniqueness: Each team name must be unique in the system
+
+2.  Customer email uniqueness: Each customer email must be unique (if provided)
+
+3.  Auto-increment IDs: All primary entities (event, team, player, match, ticket, 
+    customer, seat, personnel, audit) use auto-incrementing IDs starting from 1000
+
+4.  Sport restriction: Only 'Basketball' and 'Volleyball' sports are allowed
+
+5.  Venue restriction: Only 5 specific venues allowed:
+    - Mall of Asia Arena
+    - Smart Araneta Coliseum
+    - PhilSports Arena
+    - Ynares Center
+    - Filoil EcoOil Centre
+
+6.  Team name restriction: Only 8 UAAP member universities allowed as team names:
+    - De La Salle Green Archers
+    - Ateneo Blue Eagles
+    - UP Fighting Maroons
+    - UST Growling Tigers
+    - Far Eastern University Tamaraws
+    - University of the East Red Warriors
+    - National University Bulldogs
+    - Adamson Soaring Falcons
+
+7.  Event status restriction: Must be one of:
+    - Scheduled
+    - Active
+    - Completed
+    - Cancelled
+
+8.  Match status restriction: Must be one of:
+    - Scheduled
+    - Completed
+    - Cancelled
+    - Postponed
+
+9.  Match type restriction: Must be one of:
+    - Elimination_Round
+    - Semifinals
+    - Finals
+
+10. Seat status restriction: Must be one of:
+    - Available
+    - OnHold
+    - Sold
+
+11. Ticket status restriction: Must be one of:
+    - Active
+    - Inactive
+    - Archived
+
+12. Sale status restriction: Must be one of:
+    - Sold
+    - Refunded
+
+13. Personnel role restriction: Must be one of 12 specific roles:
+    - Usher
+    - Ticketing Agent
+    - Security
+    - Referee
+    - Scorekeeper
+    - Stat Crew
+    - Band Member
+    - Cheerleader
+    - Dance Troupe
+    - Singer
+    - Host
+    - Halftime Entertainment
+
+REFERENTIAL INTEGRITY RULES
+--------------------------------------------------------------------------------
+14. Player-Team relationship: Players must belong to an existing team 
+    (ON DELETE RESTRICT - cannot delete team with players)
+
+15. Match-Event relationship: Matches must belong to an existing event 
+    (ON DELETE CASCADE - deleting event removes its matches)
+
+16. Match_Team relationships: Match teams must reference existing matches and teams
+    (ON DELETE CASCADE for matches, RESTRICT for teams)
+
+17. Score-Match relationships: Quarter and set scores must reference existing 
+    matches (ON DELETE CASCADE - deleting match removes its scores)
+
+18. Seat-Ticket relationship: Seats must be linked to ticket tiers 
+    (ON DELETE RESTRICT - cannot delete ticket tier if seats use it)
+
+19. Seat_and_Ticket relationships: Sales must reference existing seats, events, 
+    customers, tickets, and matches (mixed CASCADE/RESTRICT rules)
+
+20. Refund-Sale relationship: Refunds must reference existing sale records 
+    (ON DELETE RESTRICT - cannot delete sale with refund audit)
+
+21. Personnel-Event-Match relationships: Personnel must be assigned to existing 
+    events and matches (ON DELETE CASCADE - removing event removes personnel)
+
+22. Event cascade deletion: Deleting an event cascades to:
+    - Its matches
+    - Match scores (quarter/set scores)
+    - Ticket sales (seat_and_ticket records)
+    - Event personnel assignments
+
+23. Team deletion protection: Teams cannot be deleted if they have:
+    - Players assigned to them
+    - Match participations (match_team records)
+
+DATA VALIDATION CONSTRAINTS
+--------------------------------------------------------------------------------
+24. Customer contact requirement: Customer must have at least phone number OR 
+    email (CHECK constraint: phone IS NOT NULL OR email IS NOT NULL)
+
+25. Home team indicator: is_home field must be 0 (away) or 1 (home)
+
+26. Basketball quarter range: Quarter numbers must be between 1 and 4 
+    (CHECK constraint: quarter_no BETWEEN 1 AND 4)
+
+27. Volleyball set range: Set numbers must be between 1 and 5 
+    (CHECK constraint: set_no BETWEEN 1 AND 5)
+
+28. Unique seat per event: Each seat can only be sold once per event 
+    (UNIQUE KEY on event_id + seat_id combination)
+
+29. Composite primary keys: 
+    - match_team uses (match_id, team_id)
+    - match_quarter_score uses (match_id, team_id, quarter_no)
+    - match_set_score uses (match_id, team_id, set_no)
+
+CALCULATED FIELDS
+--------------------------------------------------------------------------------
+30. Total price calculation: total_price = quantity × unit_price 
+    (GENERATED ALWAYS AS computed column stored in database)
+
+31. Default values:
+    - customer.registration_date defaults to CURRENT_DATE
+    - team statistics (seasons_played, standing_wins, standing_losses, 
+      total_games_played) default to 0
+    - player.individual_score defaults to 0
+    - match_team.team_score defaults to 0
+    - event.event_status defaults to 'Scheduled'
+    - match.status defaults to 'Scheduled'
+    - seat.seat_status defaults to 'Available'
+    - ticket.ticket_status defaults to 'Active'
+    - seat_and_ticket.sale_status defaults to 'Sold'
+    - seat_and_ticket.quantity defaults to 1
+
+================================================================================
+CATEGORY 2: OPERATIONAL/BUSINESS LOGIC RULES
+(Enforced at application level through validation code)
+================================================================================
+
+TICKET SALES RULES
+--------------------------------------------------------------------------------
+32. Purchase quantity limit: Customers may only purchase maximum 2 seats per 
+    transaction
+
+33. Minimum quantity: Quantity must be at least 1
+
+34. No cancelled event sales: Cannot sell tickets for cancelled events
+
+35. No past event sales: Cannot sell tickets after event has started
+
+36. Sale before start time: Tickets cannot be sold after the match/event start 
+    time (sale_datetime must be before event/match start time)
+
+37. Match belongs to event: Selected match must belong to the chosen event 
+    (validation: match.event_id = ticket.event_id)
+
+38. Match must be scheduled: Can only sell tickets for matches in 'Scheduled' 
+    status
+
+39. Seat must be linked: Seats must be linked to a ticket tier (ticket_id) 
+    to be sold
+
+40. Seat availability check: Seats must not be already sold for the specific 
+    event (no existing seat_and_ticket record for event_id + seat_id)
+
+41. New customer contact requirement: New customers must provide at least one 
+    contact method (phone or email cannot both be empty)
+
+REFUND RULES
+--------------------------------------------------------------------------------
+42. No double refunds: Tickets that have already been refunded cannot be 
+    refunded again (sale_status must be 'Sold')
+
+43. Refund amount: Refund amount equals the total price paid (refund_amount 
+    = total_price from seat_and_ticket record)
+
+44. Seat restoration: When refunded, seat status returns to 'Available'
+
+45. Audit trail: All refunds must be logged in ticket_refund_audit table with:
+    - refund_amount
+    - refund_datetime (automatically set to current timestamp)
+    - reason
+    - processed_by (person who processed the refund)
+
+MATCH AND EVENT RULES
+--------------------------------------------------------------------------------
+46. Match time validation: Match end time must be after start time 
+    (match_time_end > match_time_start)
+
+47. Match within event window: Match start and end times must fall within 
+    parent event's timeframe:
+    - match_time_start >= event_time_start
+    - match_time_end <= event_time_end
+    - All on the same date (event.match_date)
+
+48. No overlapping matches: Matches under the same event cannot have overlapping 
+    time slots (validated by checking existing match times for the event)
+
+49. Match-Event consistency: Matches can only belong to their designated event 
+    (match.event_id must reference valid event)
+
+PERSONNEL ASSIGNMENT RULES
+--------------------------------------------------------------------------------
+50. Personnel-Match-Event consistency: Event personnel's assigned match must 
+    belong to their assigned event (match.event_id = personnel.event_id)
+
+51. Match assignment required: Event personnel must be assigned to a specific 
+    match (match_id cannot be NULL)
+
+52. Required personnel fields: The following are mandatory:
+    - personnel_first_name
+    - personnel_last_name
+    - availability_status
+    - role
+    - affiliation
+
+PLAYER RULES
+--------------------------------------------------------------------------------
+53. Team required for players: Players must be assigned to an existing team 
+    (team_id must be valid)
+
+54. Player name required: First and last names are mandatory
+
+55. Sport specification: Player sport must be specified ('Basketball' or 
+    'Volleyball')
+
+56. Non-negative statistics: The following must be zero or positive:
+    - individual_score
+    - age (if provided)
+    - weight (if provided)
+    - height (if provided)
+    - player_number
+
+TEAM RULES
+--------------------------------------------------------------------------------
+57. Team name required: Team name cannot be empty
+
+58. Non-negative team stats: The following must be zero or positive:
+    - seasons_played
+    - standing_wins
+    - standing_losses
+    - total_games_played
+
+59. Consistent game counts: Total games should logically equal wins + losses 
+    (implied but not strictly enforced by constraint)
+
+SCORING RULES
+--------------------------------------------------------------------------------
+60. Quarter validation: Basketball quarters must be numbered 1-4
+
+61. Set validation: Volleyball sets must be numbered 1-5
+
+62. Non-negative scores: All point values (quarter_points, set_points, 
+    team_score) must be zero or positive
+
+63. Score aggregation: Team scores in match_team table are calculated by 
+    summing all quarter scores (basketball) or set scores (volleyball) for 
+    each team
+
+64. Sport-specific scoring:
+    - Basketball uses match_quarter_score table (4 quarters)
+    - Volleyball uses match_set_score table (up to 5 sets)
+
+65. Score summary generation: Match score_summary is automatically generated 
+    in format "Team1Name Score1 - Team2Name Score2" with home team listed first
+
+MATCH TEAM RULES
+--------------------------------------------------------------------------------
+66. Two teams per match: Each match must have exactly 2 teams 
+    (one home, one away)
+
+67. Home/away designation: Exactly one team must be designated as home team 
+    (is_home = true) and one as away team (is_home = false)
+
+68. No duplicate teams: A team cannot appear twice in the same match 
+    (enforced by composite primary key match_id + team_id)
+
+DATA ENTRY VALIDATION
+--------------------------------------------------------------------------------
+69. Required field checks: Various entities enforce mandatory fields at input 
+    time through application validation
+
+70. Numeric validation: All numeric inputs must be valid integers or decimals 
+    (enforced through input validation and parsing)
+
+71. Time format validation: Time fields must follow proper HH:MM:SS format
+
+72. Date validation: Date fields must be valid dates
+
+PRICE MANAGEMENT
+--------------------------------------------------------------------------------
+73. Effective pricing: Tickets use custom price if set (ticket.price), 
+    otherwise default price (ticket.default_price)
+
+74. Non-negative prices: All prices (default_price, price, unit_price) must 
+    be zero or positive decimal values
+
+TRANSACTION MANAGEMENT
+--------------------------------------------------------------------------------
+75. Atomic ticket purchases: Ticket purchase operations must be atomic - either 
+    all steps complete successfully or entire transaction rolls back:
+    - Customer creation/validation
+    - Seat availability check
+    - Sale record creation
+    - Seat status update
+
+76. Atomic refunds: Refund operations must be atomic:
+    - Sale status update to 'Refunded'
+    - Seat status update to 'Available'
+    - Refund audit record creation
+
+================================================================================
+SUMMARY STATISTICS
+================================================================================
+
+Total Business Rules Identified: 76
+- Category 1 (Structural/Database): 31 rules
+- Category 2 (Operational/Application): 45 rules
+
+Rules by Entity:
+- Ticket Sales & Refunds: 14 rules
+- Matches & Events: 4 rules
+- Teams: 3 rules
+- Players: 4 rules
+- Scoring: 6 rules
+- Personnel: 3 rules
+- Data Validation: 9 rules
+- Referential Integrity: 10 rules
+- Constraints: 29 rules
+- Other: 4 rules
+
+================================================================================
+NOTES
+================================================================================
+
+1. Database-level rules (Category 1) are enforced automatically by the MySQL 
+   database engine through constraints, foreign keys, ENUM types, and CHECK 
+   constraints.
+
+2. Application-level rules (Category 2) are enforced through Java code 
+   validation in service classes (TicketingService, ScoreAggregationService) 
+   and DAO classes (MatchDAO, EventPersonnelDAO, etc.).
+
+3. Some rules have dual enforcement - both at database and application level 
+   for defense in depth (e.g., contact requirement for customers).
+
+4. The cascade delete rules ensure that the database maintains referential 
+   integrity while allowing logical cleanup of related data when parent 
+   records are removed.
+
+5. Transaction management (rules 75-76) ensures database consistency through 
+   ACID properties, with automatic rollback on errors.
+
+================================================================================
+END OF DOCUMENT
+================================================================================

@@ -59,7 +59,6 @@ CREATE TABLE `match` (
   match_id         INT          NOT NULL AUTO_INCREMENT,
   event_id         INT          NOT NULL,
   match_type       ENUM('Elimination_Round','Semifinals','Finals') NOT NULL,
-  match_date       DATE         NOT NULL,
   match_time_start TIME         NOT NULL,
   match_time_end   TIME         NOT NULL,
   status           ENUM('Scheduled','Completed','Cancelled','Postponed') NOT NULL DEFAULT 'Scheduled',
@@ -260,7 +259,7 @@ VALUES
 ('National University Bulldogs', 15, 9, 6, 15),
 ('Adamson Soaring Falcons', 15, 5, 10, 15);
 
--- Events
+-- Events (10 datasets)
 INSERT INTO event (event_name, sport, match_date, event_time_start, event_time_end, venue_address, venue_capacity, event_status)
 VALUES
 ('UAAP S87 Basketball - Opening Day', 'Basketball', '2025-11-15', '14:00:00', '18:30:00', 'Mall of Asia Arena', 15000, 'Completed'),
@@ -270,7 +269,9 @@ VALUES
 ('UAAP S87 Basketball - Finals', 'Basketball', '2026-01-10', '18:00:00', '21:00:00', 'Mall of Asia Arena', 15000, 'Scheduled'),
 ('UAAP S87 Volleyball - Opening Day', 'Volleyball', '2025-11-18', '14:00:00', '17:00:00', 'Mall of Asia Arena', 15000, 'Completed'),
 ('UAAP S87 Volleyball - Round 1 Week 2', 'Volleyball', '2025-11-22', '14:00:00', '17:00:00', 'Smart Araneta Coliseum', 16000, 'Completed'),
-('UAAP S87 Volleyball - Semifinals', 'Volleyball', '2025-12-20', '14:00:00', '18:00:00', 'Mall of Asia Arena', 15000, 'Scheduled');
+('UAAP S87 Volleyball - Semifinals', 'Volleyball', '2025-12-20', '14:00:00', '18:00:00', 'Mall of Asia Arena', 15000, 'Scheduled'),
+('UAAP S87 Basketball - Round 1 Week 4', 'Basketball', '2025-11-28', '16:00:00', '20:00:00', 'Ynares Center', 10000, 'Completed'),
+('UAAP S87 Volleyball - Finals', 'Volleyball', '2026-01-15', '14:00:00', '18:00:00', 'Filoil EcoOil Centre', 8000, 'Scheduled');
 
 -- Players (Basketball - 5 per team, Volleyball - 6 per team)
 INSERT INTO player (team_id, player_first_name, player_last_name, player_number, player_sport, age, position, weight, height, individual_score)
@@ -380,18 +381,19 @@ VALUES
 (1007, 'May', 'Roque', 9, 'Volleyball', 21, 'MB', 67.0, 1.83, 106),
 (1007, 'Kate', 'Santiago', 4, 'Volleyball', 20, 'L', 58.0, 1.69, 95);
 
--- Matches
-INSERT INTO `match` (event_id, match_type, match_date, match_time_start, match_time_end, status, score_summary)
+-- Matches (10 datasets)
+INSERT INTO `match` (event_id, match_type, match_time_start, match_time_end, status, score_summary)
 VALUES
-(1000, 'Elimination_Round', '2025-11-15', '14:00:00', '16:00:00', 'Completed', 'DLSU 78 - ADMU 74'),
-(1000, 'Elimination_Round', '2025-11-15', '16:30:00', '18:30:00', 'Completed', 'UP 82 - NU 79'),
-(1001, 'Elimination_Round', '2025-11-20', '16:00:00', '18:00:00', 'Completed', 'UST 76 - FEU 72'),
-(1002, 'Elimination_Round', '2025-11-25', '18:00:00', '20:00:00', 'Completed', 'ADMU 85 - UE 68'),
-(1003, 'Semifinals', '2025-12-15', '18:00:00', '20:30:00', 'Scheduled', NULL),
-(1004, 'Finals', '2026-01-10', '18:00:00', '21:00:00', 'Scheduled', NULL),
-(1005, 'Elimination_Round', '2025-11-18', '14:00:00', '17:00:00', 'Completed', 'DLSU 3-1 UST'),
-(1006, 'Elimination_Round', '2025-11-22', '14:00:00', '17:00:00', 'Completed', 'ADMU 3-2 UP'),
-(1007, 'Semifinals', '2025-12-20', '14:00:00', '18:00:00', 'Scheduled', NULL);
+(1000, 'Elimination_Round', '14:00:00', '16:00:00', 'Completed', 'DLSU 78 - ADMU 74'),
+(1000, 'Elimination_Round', '16:30:00', '18:30:00', 'Completed', 'UP 82 - NU 79'),
+(1001, 'Elimination_Round', '16:00:00', '18:00:00', 'Completed', 'UST 76 - FEU 72'),
+(1002, 'Elimination_Round', '18:00:00', '20:00:00', 'Completed', 'ADMU 85 - UE 68'),
+(1003, 'Semifinals', '18:00:00', '20:30:00', 'Scheduled', NULL),
+(1004, 'Finals', '18:00:00', '21:00:00', 'Scheduled', NULL),
+(1005, 'Elimination_Round', '14:00:00', '17:00:00', 'Completed', 'DLSU 3-1 UST'),
+(1006, 'Elimination_Round', '14:00:00', '17:00:00', 'Completed', 'ADMU 3-2 UP'),
+(1007, 'Semifinals', '14:00:00', '18:00:00', 'Scheduled', NULL),
+(1008, 'Elimination_Round', '16:00:00', '20:00:00', 'Completed', 'NU 88 - FEU 81');
 
 -- Match Teams
 INSERT INTO match_team (match_id, team_id, is_home, team_score)
@@ -469,22 +471,35 @@ VALUES
 ('Patron', 'Mall of Asia Arena', 'Available', 1004),
 ('Patron', 'Smart Araneta Coliseum', 'Available', 1004);
 
--- Seat and Ticket Transactions
+-- Seat and Ticket Transactions (10 datasets)
 INSERT INTO seat_and_ticket (seat_id, event_id, customer_id, sale_datetime, quantity, unit_price, ticket_id, match_id, sale_status)
 VALUES
 (1000, 1000, 1000, '2025-11-01 10:00:00', 1, 750.00, 1002, 1000, 'Sold'),
 (1001, 1000, 1001, '2025-11-02 09:30:00', 1, 750.00, 1002, 1000, 'Sold'),
-(1003, 1001, 1002, '2025-11-15 11:15:00', 1, 1200.00, 1003, 1002, 'Sold');
+(1003, 1001, 1002, '2025-11-15 11:15:00', 1, 1200.00, 1003, 1002, 'Sold'),
+(1002, 1001, 1003, '2025-11-16 14:20:00', 1, 500.00, 1001, 1002, 'Sold'),
+(1004, 1002, 1004, '2025-11-18 08:45:00', 1, 1200.00, 1003, 1003, 'Sold'),
+(1005, 1002, 1005, '2025-11-18 10:00:00', 1, 1200.00, 1003, 1003, 'Sold'),
+(1006, 1005, 1006, '2025-11-10 15:30:00', 1, 500.00, 1001, 1006, 'Sold'),
+(1007, 1005, 1007, '2025-11-11 16:00:00', 1, 750.00, 1002, 1006, 'Sold'),
+(1008, 1006, 1008, '2025-11-12 12:00:00', 1, 300.00, 1000, 1007, 'Sold'),
+(1009, 1008, 1009, '2025-11-22 13:30:00', 1, 400.00, 1004, 1008, 'Sold');
 
 -- Ticket Refund Audit
 INSERT INTO ticket_refund_audit (seat_and_ticket_rec_id, refund_amount, reason, processed_by)
 VALUES
 (1002, 1200.00, 'Bad Service!', 'Ticketing Desk Supervisor');
 
--- Event Personnel
+-- Event Personnel (10 datasets)
 INSERT INTO event_personnel (personnel_first_name, personnel_last_name, availability_status, role, affiliation, contact_no, event_id, match_id)
 VALUES
 ('Mariel', 'Flores', 'Confirmed', 'Usher', 'Mall of Asia Arena Events', '0917-000-1111', 1000, 1000),
 ('Paolo', 'Reyes', 'Confirmed', 'Referee', 'UAAP Officials Pool', '0917-000-2222', 1001, 1002),
-('Angela', 'Santos', 'Confirmed', 'Host', 'Smart Communications', '0917-000-3333', 1002, 1003);
-
+('Angela', 'Santos', 'Confirmed', 'Host', 'Smart Communications', '0917-000-3333', 1002, 1003),
+('Ricardo', 'Martinez', 'Confirmed', 'Security', 'PhilSports Security Services', '0917-000-4444', 1002, 1003),
+('Linda', 'Villanueva', 'Confirmed', 'Scorekeeper', 'UAAP Stat Crew', '0917-000-5555', 1005, 1006),
+('Carlos', 'Aquino', 'Confirmed', 'Ticketing Agent', 'SM Tickets', '0917-000-6666', 1005, 1006),
+('Grace', 'Ramos', 'Confirmed', 'Cheerleader', 'DLSU Animo Squad', '0917-000-7777', 1000, 1001),
+('Daniel', 'Torres', 'Confirmed', 'Stat Crew', 'UAAP Statistics Department', '0917-000-8888', 1006, 1007),
+('Isabel', 'Fernandez', 'Confirmed', 'Singer', 'ABS-CBN Events', '0917-000-9999', 1000, 1000),
+('Ramon', 'Garcia', 'Confirmed', 'Halftime Entertainment', 'UAAP Entertainment Group', '0917-001-0000', 1008, 1008);

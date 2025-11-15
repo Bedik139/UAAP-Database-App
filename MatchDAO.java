@@ -11,22 +11,23 @@ import java.util.List;
 public class MatchDAO {
 
     private static final String BASE_SELECT =
-            "SELECT m.match_id, m.event_id, e.event_name, m.match_type, m.match_date, " +
-            "m.match_time_start, m.match_time_end, m.status, m.score_summary " +
+            "SELECT m.match_id, m.event_id, e.event_name, m.match_type, " +
+            "m.match_time_start, m.match_time_end, m.status, m.score_summary, " +
+            "e.match_date AS event_match_date " +
             "FROM `match` m INNER JOIN event e ON m.event_id = e.event_id ";
 
     public void insertMatch(Match match) throws SQLException {
         String sql = "INSERT INTO `match` " +
-                "(event_id, match_type, match_date, match_time_start, match_time_end, status, score_summary) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?)";
+                "(event_id, match_type, match_time_start, match_time_end, status, score_summary) " +
+                "VALUES (?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             validateMatchConstraints(conn, match, null);
             bindMatch(ps, match);
-            ps.setString(6, match.getStatus());
-            ps.setString(7, match.getScoreSummary());
+            ps.setString(5, match.getStatus());
+            ps.setString(6, match.getScoreSummary());
             ps.executeUpdate();
 
             try (ResultSet rs = ps.getGeneratedKeys()) {
@@ -72,7 +73,7 @@ public class MatchDAO {
     }
 
     public void updateMatch(Match match) throws SQLException {
-        String sql = "UPDATE `match` SET event_id = ?, match_type = ?, match_date = ?, " +
+        String sql = "UPDATE `match` SET event_id = ?, match_type = ?, " +
                 "match_time_start = ?, match_time_end = ?, status = ?, score_summary = ? " +
                 "WHERE match_id = ?";
 
@@ -81,9 +82,9 @@ public class MatchDAO {
 
             validateMatchConstraints(conn, match, match.getMatchId());
             bindMatch(ps, match);
-            ps.setString(6, match.getStatus());
-            ps.setString(7, match.getScoreSummary());
-            ps.setInt(8, match.getMatchId());
+            ps.setString(5, match.getStatus());
+            ps.setString(6, match.getScoreSummary());
+            ps.setInt(7, match.getMatchId());
 
             ps.executeUpdate();
         }
@@ -116,9 +117,8 @@ public class MatchDAO {
     private void bindMatch(PreparedStatement ps, Match match) throws SQLException {
         ps.setInt(1, match.getEventId());
         ps.setString(2, match.getMatchType());
-        ps.setDate(3, match.getMatchDate());
-        ps.setTime(4, match.getMatchTimeStart());
-        ps.setTime(5, match.getMatchTimeEnd());
+        ps.setTime(3, match.getMatchTimeStart());
+        ps.setTime(4, match.getMatchTimeEnd());
     }
 
     private Match mapRow(ResultSet rs) throws SQLException {
@@ -127,11 +127,11 @@ public class MatchDAO {
                 rs.getInt("event_id"),
                 rs.getString("event_name"),
                 rs.getString("match_type"),
-                rs.getDate("match_date"),
                 rs.getTime("match_time_start"),
                 rs.getTime("match_time_end"),
                 rs.getString("status"),
-                rs.getString("score_summary")
+                rs.getString("score_summary"),
+                rs.getDate("event_match_date")
         );
     }
 
@@ -140,16 +140,13 @@ public class MatchDAO {
         if (window == null) {
             throw new IllegalArgumentException("Event not found for the selected match.");
         }
-        if (match.getMatchDate() == null || !match.getMatchDate().equals(window.matchDate())) {
-            throw new IllegalArgumentException("Match date must align with the parent event date.");
-        }
         if (match.getMatchTimeStart() == null || match.getMatchTimeEnd() == null ||
                 !match.getMatchTimeEnd().after(match.getMatchTimeStart())) {
             throw new IllegalArgumentException("Match end time must be after the start time.");
         }
         if (match.getMatchTimeStart().before(window.eventStart()) ||
                 match.getMatchTimeEnd().after(window.eventEnd())) {
-            throw new IllegalArgumentException("Match times must fall within the parent event schedule.");
+            throw new IllegalArgumentException("Match start and end must fall within the parent event's timeframe.");
         }
         ensureNoOverlap(conn, match, excludeMatchId);
     }
@@ -174,15 +171,14 @@ public class MatchDAO {
 
     private void ensureNoOverlap(Connection conn, Match match, Integer excludeMatchId) throws SQLException {
         StringBuilder sql = new StringBuilder(
-                "SELECT match_time_start, match_time_end FROM `match` WHERE event_id = ? AND match_date = ?");
+                "SELECT match_time_start, match_time_end FROM `match` WHERE event_id = ?");
         if (excludeMatchId != null) {
             sql.append(" AND match_id <> ?");
         }
         try (PreparedStatement ps = conn.prepareStatement(sql.toString())) {
             ps.setInt(1, match.getEventId());
-            ps.setDate(2, match.getMatchDate());
             if (excludeMatchId != null) {
-                ps.setInt(3, excludeMatchId);
+                ps.setInt(2, excludeMatchId);
             }
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {

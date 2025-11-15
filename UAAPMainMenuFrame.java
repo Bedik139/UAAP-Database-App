@@ -26,7 +26,7 @@ import javax.swing.Timer;
 public class UAAPMainMenuFrame extends JFrame {
 
     public UAAPMainMenuFrame() {
-        super("UAAP Database Application");
+        super("UAAP Database Event Management");
         setSize(1100, 650);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -81,7 +81,7 @@ public class UAAPMainMenuFrame extends JFrame {
             customerCard = new PortalCard(
                 "Customer Portal",
                 "Ticket Management",
-                "Browse events, purchase tickets, and manage your bookings with ease.",
+                "Browse events, and purchase tickets.",
                 UAAPTheme.ACCENT_BLUE,
                 "🎫",
                 () -> {
@@ -149,7 +149,7 @@ public class UAAPMainMenuFrame extends JFrame {
             footer.setOpaque(false);
             footer.setBorder(BorderFactory.createEmptyBorder(10, 20, 20, 20));
 
-            JLabel footerLabel = new JLabel("UAAP Database Application • 2025");
+            JLabel footerLabel = new JLabel("UAAP Database Event Management Application for CCINFOM • A.Y. 2025 - 2026");
             footerLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
             footerLabel.setForeground(UAAPTheme.TEXT_SECONDARY);
 
@@ -184,11 +184,6 @@ public class UAAPMainMenuFrame extends JFrame {
             contentPanel.setBackground(Color.WHITE);
             contentPanel.setBorder(BorderFactory.createEmptyBorder(35, 30, 35, 30));
 
-            // Emoji Icon
-            JLabel emojiLabel = new JLabel(emoji);
-            emojiLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 56));
-            emojiLabel.setAlignmentX(LEFT_ALIGNMENT);
-
             // Title
             JLabel titleLabel = new JLabel(title);
             titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
@@ -212,7 +207,7 @@ public class UAAPMainMenuFrame extends JFrame {
             buttonPanel.setOpaque(false);
             buttonPanel.setAlignmentX(LEFT_ALIGNMENT);
 
-            JButton actionButton = new JButton("Launch Portal →");
+            JButton actionButton = new JButton("Launch Portal");
             actionButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
             actionButton.setForeground(Color.WHITE);
             actionButton.setBackground(accentColor);
@@ -238,9 +233,7 @@ public class UAAPMainMenuFrame extends JFrame {
             actionButton.addActionListener(e -> action.run());
 
             buttonPanel.add(actionButton);
-
-            // Add components with spacing
-            contentPanel.add(emojiLabel);
+            
             contentPanel.add(Box.createVerticalStrut(20));
             contentPanel.add(titleLabel);
             contentPanel.add(Box.createVerticalStrut(5));

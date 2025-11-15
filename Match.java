@@ -1,5 +1,5 @@
-import java.sql.Date;
 import java.sql.Time;
+import java.sql.Date;
 
 public class Match {
 
@@ -7,11 +7,11 @@ public class Match {
     private int eventId;
     private String eventName;
     private String matchType;
-    private Date matchDate;
     private Time matchTimeStart;
     private Time matchTimeEnd;
     private String status;
     private String scoreSummary;
+    private Date eventDate;
 
     public Match() {}
 
@@ -19,29 +19,28 @@ public class Match {
                  int eventId,
                  String eventName,
                  String matchType,
-                 Date matchDate,
                  Time matchTimeStart,
                  Time matchTimeEnd,
                  String status,
-                 String scoreSummary) {
+                 String scoreSummary,
+                 Date eventDate) {
         this.matchId = matchId;
         this.eventId = eventId;
         this.eventName = eventName;
         this.matchType = matchType;
-        this.matchDate = matchDate;
         this.matchTimeStart = matchTimeStart;
         this.matchTimeEnd = matchTimeEnd;
         this.status = status;
         this.scoreSummary = scoreSummary;
+        this.eventDate = eventDate;
     }
 
     public Match(int eventId,
                  String matchType,
-                 Date matchDate,
                  Time matchTimeStart,
                  Time matchTimeEnd,
                  String status) {
-        this(0, eventId, null, matchType, matchDate, matchTimeStart, matchTimeEnd, status, null);
+        this(0, eventId, null, matchType, matchTimeStart, matchTimeEnd, status, null, null);
     }
 
     public int getMatchId() {
@@ -76,14 +75,6 @@ public class Match {
         this.matchType = matchType;
     }
 
-    public Date getMatchDate() {
-        return matchDate;
-    }
-
-    public void setMatchDate(Date matchDate) {
-        this.matchDate = matchDate;
-    }
-
     public Time getMatchTimeStart() {
         return matchTimeStart;
     }
@@ -116,13 +107,20 @@ public class Match {
         this.scoreSummary = scoreSummary;
     }
 
+    public Date getEventDate() {
+        return eventDate;
+    }
+
+    public void setEventDate(Date eventDate) {
+        this.eventDate = eventDate;
+    }
+
     @Override
     public String toString() {
         String label = eventName != null ? eventName : "Match";
-        String statusLabel = status != null ? " - " + status : "";
         if (matchId > 0) {
-            return String.format("#%d %s (%s%s)", matchId, label, matchType, statusLabel);
+            return String.format("#%d - %s (%s)", matchId, label, matchType);
         }
-        return String.format("%s (%s%s)", label, matchType, statusLabel);
+        return String.format("%s (%s)", label, matchType);
     }
 }

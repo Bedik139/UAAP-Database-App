@@ -220,7 +220,8 @@ public class TicketingService {
 
     private Match fetchMatch(Connection conn, int matchId, boolean forUpdate) throws SQLException {
         String sql = "SELECT m.match_id, m.event_id, e.event_name, m.match_type, " +
-                "m.match_date, m.match_time_start, m.match_time_end, m.status, m.score_summary " +
+                "m.match_time_start, m.match_time_end, m.status, m.score_summary, " +
+                "e.match_date AS event_match_date " +
                 "FROM `match` m INNER JOIN event e ON m.event_id = e.event_id " +
                 "WHERE m.match_id = ? " + (forUpdate ? "FOR UPDATE" : "");
 
@@ -234,11 +235,11 @@ public class TicketingService {
                             rs.getInt("event_id"),
                             rs.getString("event_name"),
                             rs.getString("match_type"),
-                            rs.getDate("match_date"),
                             rs.getTime("match_time_start"),
                             rs.getTime("match_time_end"),
                             rs.getString("status"),
-                            rs.getString("score_summary")
+                            rs.getString("score_summary"),
+                            rs.getDate("event_match_date")
                     );
                 }
             }
@@ -280,16 +281,15 @@ public class TicketingService {
         if (event == null || saleTimestamp == null) {
             return;
         }
-        LocalDateTime cutoff = LocalDateTime.of(
-                event.getMatchDate().toLocalDate(),
-                event.getEventTimeStart().toLocalTime()
-        );
-        if (match != null) {
-            cutoff = LocalDateTime.of(
-                    match.getMatchDate().toLocalDate(),
-                    match.getMatchTimeStart().toLocalTime()
-            );
+        LocalDate baseDate = event.getMatchDate().toLocalDate();
+        LocalTime baseTime = event.getEventTimeStart().toLocalTime();
+        if (match != null && match.getMatchTimeStart() != null) {
+            baseTime = match.getMatchTimeStart().toLocalTime();
+            if (match.getEventDate() != null) {
+                baseDate = match.getEventDate().toLocalDate();
+            }
         }
+        LocalDateTime cutoff = LocalDateTime.of(baseDate, baseTime);
         if (saleTimestamp.toLocalDateTime().isAfter(cutoff)) {
             throw new IllegalStateException("Tickets can no longer be sold after the start time.");
         }

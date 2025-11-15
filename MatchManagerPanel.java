@@ -18,7 +18,6 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.sql.Date;
 import java.sql.SQLException;
 import java.sql.Time;
 import java.util.List;
@@ -38,11 +37,11 @@ public class MatchManagerPanel extends JPanel {
     private JTextField idField;
     private JComboBox<Event> eventCombo;
     private JComboBox<String> typeCombo;
-    private JTextField dateField;
     private JTextField startField;
     private JTextField endField;
     private JComboBox<String> statusCombo;
     private JTextField summaryField;
+    private JLabel eventTimeframeLabel;
 
     private JButton addButton;
     private JButton updateButton;
@@ -71,42 +70,90 @@ public class MatchManagerPanel extends JPanel {
     private void initForm() {
         idField = new JTextField();
         idField.setEditable(false);
+        idField.setBackground(new java.awt.Color(245, 245, 245));
+        UAAPTheme.styleTextField(idField);
 
         eventCombo = new JComboBox<>();
+        eventCombo.setPreferredSize(new java.awt.Dimension(400, 35));
+        eventCombo.addActionListener(e -> updateEventTimeframeLabel());
+        UAAPTheme.styleComboBox(eventCombo);
+        
         typeCombo = new JComboBox<>(MATCH_TYPES);
-        dateField = new JTextField();
+        UAAPTheme.styleComboBox(typeCombo);
+        
         startField = new JTextField();
+        startField.setToolTipText("Format: HH:MM:SS (e.g., 14:30:00)");
+        UAAPTheme.styleTextField(startField);
+        
         endField = new JTextField();
+        endField.setToolTipText("Format: HH:MM:SS (e.g., 16:30:00)");
+        UAAPTheme.styleTextField(endField);
+        
+        eventTimeframeLabel = new JLabel(" ");
+        eventTimeframeLabel.setFont(new java.awt.Font("Segoe UI", java.awt.Font.PLAIN, 12));
+        eventTimeframeLabel.setForeground(UAAPTheme.TEXT_SECONDARY);
+        
         statusCombo = new JComboBox<>(STATUS_OPTIONS);
         statusCombo.setSelectedItem("Scheduled");
+        UAAPTheme.styleComboBox(statusCombo);
+        
         summaryField = new JTextField();
         summaryField.setEditable(false);
         summaryField.setFocusable(false);
+        summaryField.setBackground(new java.awt.Color(245, 245, 245));
         summaryField.setToolTipText("Auto-generated from match team totals.");
+        UAAPTheme.styleTextField(summaryField);
 
         add(buildForm(), BorderLayout.NORTH);
     }
 
     private JPanel buildForm() {
         JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBorder(BorderFactory.createTitledBorder("Match Details"));
+        panel.setBackground(UAAPTheme.CARD_BACKGROUND);
+        panel.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(UAAPTheme.CARD_BORDER, 2),
+            BorderFactory.createEmptyBorder(10, 15, 10, 15)
+        ));
 
-        addFormField(panel, 0, 0, "Match ID (auto)", idField);
-        addFormField(panel, 0, 1, "Event", eventCombo);
-        addFormField(panel, 1, 0, "Match Type", typeCombo);
-        addFormField(panel, 1, 1, "Status", statusCombo);
-        addFormField(panel, 2, 0, "Match Date", dateField);
-        addFormField(panel, 2, 1, "Start Time", startField);
-        addFormField(panel, 3, 0, "End Time", endField);
-        addFormField(panel, 3, 1, "Score Summary", summaryField);
+        // Title panel with label and event timeframe
+        JPanel titlePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        titlePanel.setOpaque(false);
+        
+        JLabel titleLabel = new JLabel("Match Details");
+        titleLabel.setFont(new java.awt.Font("Segoe UI Semibold", java.awt.Font.BOLD, 14));
+        titleLabel.setForeground(UAAPTheme.TEXT_PRIMARY);
+        
+        titlePanel.add(titleLabel);
+        titlePanel.add(eventTimeframeLabel);
+        
+        GridBagConstraints titleGbc = new GridBagConstraints();
+        titleGbc.gridx = 0;
+        titleGbc.gridy = 0;
+        titleGbc.gridwidth = 4;
+        titleGbc.anchor = GridBagConstraints.WEST;
+        titleGbc.insets = new Insets(0, 0, 8, 0);
+        titleGbc.fill = GridBagConstraints.HORIZONTAL;
+        panel.add(titlePanel, titleGbc);
+
+        addFormField(panel, 1, 0, "Match ID (auto)", idField);
+        addFormField(panel, 1, 1, "Event", eventCombo);
+        addFormField(panel, 2, 0, "Match Type", typeCombo);
+        addFormField(panel, 2, 1, "Status", statusCombo);
+        addFormField(panel, 3, 0, "Start Time", startField);
+        addFormField(panel, 3, 1, "End Time", endField);
+        addFormField(panel, 4, 0, "Score Summary", summaryField);
 
         return panel;
     }
 
     private void addFormField(JPanel panel, int row, int col, String label, java.awt.Component component) {
+        JLabel jLabel = new JLabel(label + ":");
+        jLabel.setFont(new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 12));
+        jLabel.setForeground(UAAPTheme.TEXT_PRIMARY);
+        
         GridBagConstraints labelGbc = baseGbc(row, col * 2);
         labelGbc.anchor = GridBagConstraints.EAST;
-        panel.add(new JLabel(label), labelGbc);
+        panel.add(jLabel, labelGbc);
 
         GridBagConstraints fieldGbc = baseGbc(row, col * 2 + 1);
         fieldGbc.fill = GridBagConstraints.HORIZONTAL;
@@ -118,13 +165,13 @@ public class MatchManagerPanel extends JPanel {
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = col;
         gbc.gridy = row;
-        gbc.insets = new Insets(6, 8, 6, 8);
+        gbc.insets = new Insets(4, 8, 4, 8);
         return gbc;
     }
 
     private void initTable() {
         tableModel = new DefaultTableModel(
-                new Object[]{"Match ID", "Event", "Type", "Date", "Start", "End", "Status", "Score Summary"}, 0
+                new Object[]{"Match ID", "Event", "Type", "Start", "End", "Status", "Score Summary"}, 0
         ) {
             @Override public boolean isCellEditable(int row, int column) { return false; }
         };
@@ -149,13 +196,21 @@ public class MatchManagerPanel extends JPanel {
     }
 
     private void initButtons() {
-        JPanel panel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 15));
+        panel.setBackground(UAAPTheme.LIGHT_SURFACE);
+        panel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, UAAPTheme.CARD_BORDER));
 
-        addButton = new JButton("Add");
+        addButton = new JButton("Add Match");
         updateButton = new JButton("Update");
         deleteButton = new JButton("Delete");
         clearButton = new JButton("Clear Form");
         refreshButton = new JButton("Refresh");
+
+        UAAPTheme.styleActionButton(addButton);
+        UAAPTheme.styleActionButton(updateButton);
+        UAAPTheme.styleDangerButton(deleteButton);
+        UAAPTheme.styleNeutralButton(clearButton);
+        UAAPTheme.styleInfoButton(refreshButton);
 
         addButton.addActionListener(e -> handleAdd());
         updateButton.addActionListener(e -> handleUpdate());
@@ -179,11 +234,10 @@ public class MatchManagerPanel extends JPanel {
         idField.setText(String.valueOf(tableModel.getValueAt(row, 0)));
         selectEventByLabel(String.valueOf(tableModel.getValueAt(row, 1)));
         typeCombo.setSelectedItem(tableModel.getValueAt(row, 2));
-        dateField.setText(String.valueOf(tableModel.getValueAt(row, 3)));
-        startField.setText(String.valueOf(tableModel.getValueAt(row, 4)));
-        endField.setText(String.valueOf(tableModel.getValueAt(row, 5)));
-        statusCombo.setSelectedItem(tableModel.getValueAt(row, 6));
-        Object summary = tableModel.getValueAt(row, 7);
+        startField.setText(String.valueOf(tableModel.getValueAt(row, 3)));
+        endField.setText(String.valueOf(tableModel.getValueAt(row, 4)));
+        statusCombo.setSelectedItem(tableModel.getValueAt(row, 5));
+        Object summary = tableModel.getValueAt(row, 6);
         summaryField.setText(summary != null ? summary.toString() : "");
     }
 
@@ -271,15 +325,13 @@ public class MatchManagerPanel extends JPanel {
 
         Event event = (Event) eventCombo.getSelectedItem();
         String type = (String) typeCombo.getSelectedItem();
-        String dateText = dateField.getText().trim();
         String startText = startField.getText().trim();
         String endText = endField.getText().trim();
 
-        if (dateText.isEmpty() || startText.isEmpty() || endText.isEmpty()) {
-            throw new IllegalArgumentException("Date and time fields are required.");
+        if (startText.isEmpty() || endText.isEmpty()) {
+            throw new IllegalArgumentException("Start and end time fields are required.");
         }
 
-        Date date = Date.valueOf(dateText);
         Time start = Time.valueOf(startText);
         Time end = Time.valueOf(endText);
 
@@ -288,11 +340,11 @@ public class MatchManagerPanel extends JPanel {
                 event.getEventId(),
                 event.getEventName(),
                 type,
-                date,
                 start,
                 end,
                 (String) statusCombo.getSelectedItem(),
-                summaryField.getText().trim().isEmpty() ? null : summaryField.getText().trim()
+                summaryField.getText().trim().isEmpty() ? null : summaryField.getText().trim(),
+                event.getMatchDate()
         );
         return match;
     }
@@ -303,7 +355,6 @@ public class MatchManagerPanel extends JPanel {
             eventCombo.setSelectedIndex(0);
         }
         typeCombo.setSelectedIndex(0);
-        dateField.setText("");
         startField.setText("");
         endField.setText("");
         statusCombo.setSelectedItem("Scheduled");
@@ -317,7 +368,10 @@ public class MatchManagerPanel extends JPanel {
             List<Event> events = eventDAO.getAllEvents();
             DefaultComboBoxModel<Event> model = new DefaultComboBoxModel<>();
             for (Event event : events) {
-                model.addElement(event);
+                // Only show scheduled events (not completed)
+                if (!"Completed".equalsIgnoreCase(event.getEventStatus())) {
+                    model.addElement(event);
+                }
             }
             eventCombo.setModel(model);
             if (model.getSize() > 0) {
@@ -337,7 +391,6 @@ public class MatchManagerPanel extends JPanel {
                         match.getMatchId(),
                         match.toString(),
                         match.getMatchType(),
-                        match.getMatchDate(),
                         match.getMatchTimeStart(),
                         match.getMatchTimeEnd(),
                         match.getStatus(),
@@ -348,6 +401,21 @@ public class MatchManagerPanel extends JPanel {
             showError("Unable to load matches:\n" + ex.getMessage());
         }
         spotlightPanel.showcaseMatch(-1);
+    }
+
+    private void updateEventTimeframeLabel() {
+        Event selectedEvent = (Event) eventCombo.getSelectedItem();
+        if (selectedEvent != null) {
+            String timeframe = String.format(
+                    "Match should be Scheduled within (%s | %s - %s)",
+                    selectedEvent.getMatchDate(),
+                    selectedEvent.getEventTimeStart(),
+                    selectedEvent.getEventTimeEnd()
+            );
+            eventTimeframeLabel.setText(timeframe);
+        } else {
+            eventTimeframeLabel.setText("");
+        }
     }
 
     private void showError(String message) {

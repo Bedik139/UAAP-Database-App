@@ -129,8 +129,12 @@ public final class UAAPTheme {
             public Component getTableCellRendererComponent(
                     JTable tbl, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                 Component comp = super.getTableCellRendererComponent(tbl, value, isSelected, hasFocus, row, column);
-                if (!isSelected) {
+                if (isSelected) {
+                    comp.setBackground(SELECTION_BG);
+                    comp.setForeground(Color.WHITE);
+                } else {
                     comp.setBackground(row % 2 == 0 ? TABLE_ROW_EVEN : Color.WHITE);
+                    comp.setForeground(TEXT_PRIMARY);
                 }
                 setBorder(BorderFactory.createEmptyBorder(4, 8, 4, 8));
                 return comp;

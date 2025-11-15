@@ -13,6 +13,7 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.Timer;
 
 /**
@@ -40,8 +41,16 @@ public class MatchSpotlightPanel extends JPanel {
         headlineLabel.setBorder(BorderFactory.createEmptyBorder(12, 16, 4, 16));
         headlineLabel.setText(headline);
 
+        // Wrap teamStack in a JScrollPane to make it scrollable
+        JScrollPane scrollPane = new JScrollPane(teamStack);
+        scrollPane.setOpaque(false);
+        scrollPane.getViewport().setOpaque(false);
+        scrollPane.setBorder(null);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+
         add(headlineLabel, BorderLayout.NORTH);
-        add(teamStack, BorderLayout.CENTER);
+        add(scrollPane, BorderLayout.CENTER);
 
         Timer timer = new Timer(80, e -> {
             pulse += 0.03f;
@@ -53,7 +62,7 @@ public class MatchSpotlightPanel extends JPanel {
     public void showcaseMatch(int matchId) {
         teamStack.removeAll();
         if (matchId <= 0) {
-            headline = "Select a match to ignite the artboard.";
+            headline = "Select a match to View the Teams";
             headlineLabel.setText(headline);
             revalidate();
             repaint();

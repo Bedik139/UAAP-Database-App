@@ -38,7 +38,7 @@ public class CustomerPortalFrame extends JFrame {
         bottomPanel.setOpaque(false);
         bottomPanel.setBorder(BorderFactory.createEmptyBorder(8, 16, 16, 16));
         
-        JButton mainMenuButton = new JButton("← Main Menu");
+        JButton mainMenuButton = new JButton("Main Menu");
         UAAPTheme.styleNeutralButton(mainMenuButton);
         mainMenuButton.addActionListener(e -> UAAPApp.navigateToMainMenu(this));
         

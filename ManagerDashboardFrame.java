@@ -23,7 +23,6 @@ public class ManagerDashboardFrame extends JFrame {
         tabs.addTab("Events", new EventManagerPanel());
         tabs.addTab("Matches", new MatchManagerPanel());
         tabs.addTab("Match Teams", new MatchTeamManagerPanel());
-        tabs.addTab("Match Results", new MatchResultPanel());
         tabs.addTab("Quarter Scores (BB)", new MatchQuarterScoreManagerPanel());
         tabs.addTab("Set Scores (VB)", new MatchSetScoreManagerPanel());
         tabs.addTab("Seat & Ticket", new SeatAndTicketManagerPanel());
@@ -31,7 +30,7 @@ public class ManagerDashboardFrame extends JFrame {
         tabs.addTab("Event Personnel", new EventPersonnelManagerPanel());
         tabs.addTab("Teams", new TeamManagerPanel());
         tabs.addTab("Players", new PlayerManagerPanel());
-        tabs.addTab("Reports", new ReportsPanelEnhanced());
+        tabs.addTab("Reports", new ReportsPanel());
 
         UAAPTheme.styleTabPane(tabs);
         UAAPTheme.elevate(tabs);
@@ -48,7 +47,7 @@ public class ManagerDashboardFrame extends JFrame {
         buttonPanel.setOpaque(false);
         buttonPanel.setBorder(BorderFactory.createEmptyBorder(8, 16, 16, 16));
         
-        JButton mainMenuButton = new JButton("← Main Menu");
+        JButton mainMenuButton = new JButton("Main Menu");
         UAAPTheme.styleNeutralButton(mainMenuButton);
         mainMenuButton.addActionListener(e -> UAAPApp.navigateToMainMenu(this));
         
