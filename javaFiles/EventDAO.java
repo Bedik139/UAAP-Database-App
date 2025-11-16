@@ -25,7 +25,12 @@ public class EventDAO {
             ps.setTime(4, event.getEventTimeStart());
             ps.setTime(5, event.getEventTimeEnd());
             ps.setString(6, event.getVenueAddress());
-            ps.setInt(7, event.getVenueCapacity());
+            
+            // Auto-set capacity based on venue
+            int capacity = getVenueCapacity(event.getVenueAddress());
+            ps.setInt(7, capacity);
+            event.setVenueCapacity(capacity); // Update the event object too
+            
             ps.setString(8, event.getEventStatus());
 
             ps.executeUpdate();
@@ -81,7 +86,12 @@ public class EventDAO {
             ps.setTime(4, event.getEventTimeStart());
             ps.setTime(5, event.getEventTimeEnd());
             ps.setString(6, event.getVenueAddress());
-            ps.setInt(7, event.getVenueCapacity());
+            
+            // Auto-set capacity based on venue
+            int capacity = getVenueCapacity(event.getVenueAddress());
+            ps.setInt(7, capacity);
+            event.setVenueCapacity(capacity); // Update the event object too
+            
             ps.setString(8, event.getEventStatus());
             ps.setInt(9, event.getEventId());
 
@@ -125,5 +135,18 @@ public class EventDAO {
         event.setEventStatus(rs.getString("event_status"));
         event.setVenueCapacity(rs.getInt("venue_capacity"));
         return event;
+    }
+
+    /**
+     * Helper method to get the capacity for a venue address.
+     * Uses the Venue enum to get the standard capacity.
+     */
+    private int getVenueCapacity(String venueAddress) {
+        Venue venue = Venue.fromName(venueAddress);
+        if (venue != null) {
+            return venue.getCapacity();
+        }
+        // Default fallback if venue not found
+        return 10000;
     }
 }

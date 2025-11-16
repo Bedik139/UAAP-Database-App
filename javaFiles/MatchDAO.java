@@ -25,6 +25,10 @@ public class MatchDAO {
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             validateMatchConstraints(conn, match, null);
+            
+            // Auto-set event capacity based on venue when match is created
+            autoSetEventCapacity(conn, match.getEventId());
+            
             bindMatch(ps, match);
             ps.setString(5, match.getStatus());
             ps.setString(6, match.getScoreSummary());
@@ -194,6 +198,35 @@ public class MatchDAO {
 
     private boolean timesOverlap(Time startA, Time endA, Time startB, Time endB) {
         return startA.before(endB) && endA.after(startB);
+    }
+
+    /**
+     * Automatically sets the event capacity based on the venue's capacity
+     * when a match is created for that event.
+     */
+    private void autoSetEventCapacity(Connection conn, int eventId) throws SQLException {
+        String selectSql = "SELECT venue_address FROM event WHERE event_id = ?";
+        String updateSql = "UPDATE event SET venue_capacity = ? WHERE event_id = ?";
+        
+        try (PreparedStatement selectPs = conn.prepareStatement(selectSql)) {
+            selectPs.setInt(1, eventId);
+            
+            try (ResultSet rs = selectPs.executeQuery()) {
+                if (rs.next()) {
+                    String venueAddress = rs.getString("venue_address");
+                    Venue venue = Venue.fromName(venueAddress);
+                    
+                    if (venue != null) {
+                        // Update event capacity to match venue capacity
+                        try (PreparedStatement updatePs = conn.prepareStatement(updateSql)) {
+                            updatePs.setInt(1, venue.getCapacity());
+                            updatePs.setInt(2, eventId);
+                            updatePs.executeUpdate();
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private record EventWindow(Date matchDate, Time eventStart, Time eventEnd, String sport) {}

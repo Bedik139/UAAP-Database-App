@@ -43,7 +43,6 @@ public class MatchSetScoreManagerPanel extends JPanel {
     private JButton clearButton;
 
     private Integer currentMatchId;
-    private String currentSport;
     private Integer selectedTeamId;
     private Integer selectedSetNo;
 
@@ -198,7 +197,7 @@ public class MatchSetScoreManagerPanel extends JPanel {
             }
 
             currentMatchId = matchId;
-            currentSport = event.getSport();
+            event.getSport();
             matchInfoLabel.setText(match.toString() + " • " + safeSportLabel(event.getSport()));
 
             seedSetDataIfNeeded(match);
@@ -430,7 +429,6 @@ public class MatchSetScoreManagerPanel extends JPanel {
 
     private void resetPanelState(String label) {
         currentMatchId = null;
-        currentSport = null;
         matchInfoLabel.setText(label);
         tableModel.setRowCount(0);
         cachedScores.clear();
