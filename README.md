@@ -45,22 +45,7 @@ refund_audit - Refund logging and audit trail
 Operations Tables:
 event_personnel - Staff assignments (ushers, referees, entertainers, etc.)
 
-3. Update Database Connection
-Edit Database.java credentials:
-private static final String URL = "jdbc:mysql://localhost:3306/uaap_db";
-private static final String USER = "your_username";
-private static final String PASSWORD = "your_password";
-
-COMPILE AND RUN
-
-Compile (Windows)
-javac -cp ".;lib/mysql-connector-j-9.5.0.jar" *.java
-
-Compile (macOS/Linux)
-javac -cp ".:lib/mysql-connector-j-9.5.0.jar" *.java
-
-Run
-java -cp ".;lib/mysql-connector-j-9.5.0.jar" UAAPApp
+Run via .bat File and enter your mysql pwd and username
 
 APPLICATION STRUCTURE
 
@@ -82,37 +67,32 @@ Match Spotlight displays team crests
 Assign home/away teams with live scoring
 Team logos rendered inline
 
-4. Match Results
-Record final scores + optional summaries
-Individual player point attribution
-Cascading updates: match status, team standings, player totals
-
-5. Quarter Scores (Basketball)
+4. Quarter Scores (Basketball)
 Manage quarter-by-quarter breakdown (Q1-Q4)
 Auto-generated performance reports
 
-6. Set Scores (Volleyball)
+5. Set Scores (Volleyball)
 Set-by-set scoring (1-5 sets)
 Formatted breakdown display
 
-7. Seat and Ticket
+6. Seat and Ticket
 Central sales console
 Process refunds with automatic seat release
 Match-specific ticket linking
 
-8. Event Personnel
+7. Event Personnel
 Staff management with role presets
 Optional match assignments
 
-9. Teams
+8. Teams
 Team rosters with auto-calculated W/L/Games
 Season standings tracking
 
-10. Players
+9. Players
 Individual profiles: jersey number, biometrics, scores
 Running statistics aggregation
 
-11. Reports (5 Dashboards)
+10. Reports (5 Dashboards)
 Season Standings - Win percentage sorted rankings
 Ticket Sales - Date-range filtered transactions  
 Venue Utilization - Monthly occupancy percentage
