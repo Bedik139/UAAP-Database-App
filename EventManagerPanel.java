@@ -275,7 +275,7 @@ public class EventManagerPanel extends JPanel {
             throw new IllegalArgumentException("All fields except ID are required.");
         }
 
-        Date matchDate = Date.valueOf(dateText);
+        Date eventDate = Date.valueOf(dateText);
         Time start = Time.valueOf(startText);
         Time end = Time.valueOf(endText);
         int capacity = Integer.parseInt(capacityText);
@@ -284,7 +284,7 @@ public class EventManagerPanel extends JPanel {
                 includeId ? Integer.parseInt(idField.getText().trim()) : 0,
                 name,
                 (String) sportField.getSelectedItem(),
-                matchDate,
+                eventDate,
                 start,
                 end,
                 venue.getDisplayName(),
@@ -319,7 +319,7 @@ public class EventManagerPanel extends JPanel {
                         event.getEventId(),
                         event.getEventName(),
                         event.getSport(),
-                        event.getMatchDate(),
+                        event.getEventDate(),
                         event.getEventTimeStart(),
                         event.getEventTimeEnd(),
                         event.getVenueAddress(),

@@ -344,7 +344,7 @@ public class MatchManagerPanel extends JPanel {
                 end,
                 (String) statusCombo.getSelectedItem(),
                 summaryField.getText().trim().isEmpty() ? null : summaryField.getText().trim(),
-                event.getMatchDate()
+                event.getEventDate()
         );
         return match;
     }
@@ -408,7 +408,7 @@ public class MatchManagerPanel extends JPanel {
         if (selectedEvent != null) {
             String timeframe = String.format(
                     "Match should be Scheduled within (%s | %s - %s)",
-                    selectedEvent.getMatchDate(),
+                    selectedEvent.getEventDate(),
                     selectedEvent.getEventTimeStart(),
                     selectedEvent.getEventTimeEnd()
             );

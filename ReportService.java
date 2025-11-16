@@ -38,7 +38,7 @@ public class ReportService {
 
     public List<TicketSalesRow> getTicketSalesSummary(LocalDate start, LocalDate end) throws SQLException {
         StringBuilder sql = new StringBuilder();
-        sql.append("SELECT e.event_id, e.event_name, e.sport, e.match_date, ")
+        sql.append("SELECT e.event_id, e.event_name, e.sport, e.event_date, ")
            .append("sat.match_id, SUM(CASE WHEN sat.sale_status = 'Sold' THEN sat.quantity ELSE 0 END) AS tickets_sold, ")
            .append("SUM(CASE WHEN sat.sale_status = 'Sold' THEN sat.total_price ELSE 0 END) AS revenue, ")
            .append("DATE(sat.sale_datetime) AS sale_day ")
@@ -75,7 +75,7 @@ public class ReportService {
                             rs.getInt("event_id"),
                             rs.getString("event_name"),
                             rs.getString("sport"),
-                            rs.getDate("match_date"),
+                            rs.getDate("event_date"),
                             (Integer) rs.getObject("match_id"),
                             rs.getInt("tickets_sold"),
                             rs.getBigDecimal("revenue") != null ? rs.getBigDecimal("revenue") : BigDecimal.ZERO,
@@ -89,7 +89,7 @@ public class ReportService {
 
     public List<VenueUtilizationRow> getVenueUtilization(LocalDate forMonth) throws SQLException {
         StringBuilder sql = new StringBuilder();
-        sql.append("SELECT e.event_id, e.event_name, e.venue_address, e.match_date, ")
+        sql.append("SELECT e.event_id, e.event_name, e.venue_address, e.event_date, ")
            .append("SUM(CASE WHEN sat.sale_status = 'Sold' THEN sat.quantity ELSE 0 END) AS seats_sold, ")
            .append("e.venue_capacity AS total_seats ")
            .append("FROM event e ")
@@ -99,13 +99,13 @@ public class ReportService {
         if (forMonth != null) {
             LocalDate firstDay = forMonth.withDayOfMonth(1);
             LocalDate lastDay = firstDay.plusMonths(1).minusDays(1);
-            sql.append("WHERE e.match_date BETWEEN ? AND ? ");
+            sql.append("WHERE e.event_date BETWEEN ? AND ? ");
             params.add(Date.valueOf(firstDay));
             params.add(Date.valueOf(lastDay));
         }
 
         sql.append("GROUP BY e.event_id, e.venue_address ")
-           .append("ORDER BY e.match_date, e.event_name");
+           .append("ORDER BY e.event_date, e.event_name");
 
         List<VenueUtilizationRow> rows = new ArrayList<>();
         try (Connection conn = Database.getConnection();
@@ -129,7 +129,7 @@ public class ReportService {
                             rs.getInt("event_id"),
                             rs.getString("event_name"),
                             rs.getString("venue_address"),
-                            rs.getDate("match_date"),
+                            rs.getDate("event_date"),
                             seatsSold,
                             totalSeats,
                             occupancy

@@ -8,12 +8,12 @@ import java.util.List;
 public class EventDAO {
 
     private static final String BASE_SELECT =
-            "SELECT event_id, event_name, sport, match_date, event_time_start, " +
+            "SELECT event_id, event_name, sport, event_date, event_time_start, " +
             "event_time_end, venue_address, venue_capacity, event_status FROM event ";
 
     public void insertEvent(Event event) throws SQLException {
         String sql = "INSERT INTO event " +
-                "(event_name, sport, match_date, event_time_start, event_time_end, venue_address, venue_capacity, event_status) " +
+                "(event_name, sport, event_date, event_time_start, event_time_end, venue_address, venue_capacity, event_status) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = Database.getConnection();
@@ -21,7 +21,7 @@ public class EventDAO {
 
             ps.setString(1, event.getEventName());
             ps.setString(2, event.getSport());
-            ps.setDate(3, event.getMatchDate());
+            ps.setDate(3, event.getEventDate());
             ps.setTime(4, event.getEventTimeStart());
             ps.setTime(5, event.getEventTimeEnd());
             ps.setString(6, event.getVenueAddress());
@@ -68,7 +68,7 @@ public class EventDAO {
 
     public void updateEvent(Event event) throws SQLException {
         String sql = "UPDATE event SET " +
-                "event_name = ?, sport = ?, match_date = ?, event_time_start = ?, " +
+                "event_name = ?, sport = ?, event_date = ?, event_time_start = ?, " +
                 "event_time_end = ?, venue_address = ?, venue_capacity = ?, event_status = ? " +
                 "WHERE event_id = ?";
 
@@ -77,7 +77,7 @@ public class EventDAO {
 
             ps.setString(1, event.getEventName());
             ps.setString(2, event.getSport());
-            ps.setDate(3, event.getMatchDate());
+            ps.setDate(3, event.getEventDate());
             ps.setTime(4, event.getEventTimeStart());
             ps.setTime(5, event.getEventTimeEnd());
             ps.setString(6, event.getVenueAddress());
@@ -118,7 +118,7 @@ public class EventDAO {
         event.setEventId(rs.getInt("event_id"));
         event.setEventName(rs.getString("event_name"));
         event.setSport(rs.getString("sport"));
-        event.setMatchDate(rs.getDate("match_date"));
+        event.setEventDate(rs.getDate("event_date"));
         event.setEventTimeStart(rs.getTime("event_time_start"));
         event.setEventTimeEnd(rs.getTime("event_time_end"));
         event.setVenueAddress(rs.getString("venue_address"));

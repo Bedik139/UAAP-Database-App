@@ -5,7 +5,7 @@ public class Event {
     private int eventId;
     private String eventName;
     private String sport;
-    private Date matchDate;
+    private Date eventDate;
     private Time eventTimeStart;
     private Time eventTimeEnd;
     private String venueAddress;
@@ -17,7 +17,7 @@ public class Event {
     public Event(int eventId,
                  String eventName,
                  String sport,
-                 Date matchDate,
+                 Date eventDate,
                  Time eventTimeStart,
                  Time eventTimeEnd,
                  String venueAddress,
@@ -26,7 +26,7 @@ public class Event {
         this.eventId = eventId;
         this.eventName = eventName;
         this.sport = sport;
-        this.matchDate = matchDate;
+        this.eventDate = eventDate;
         this.eventTimeStart = eventTimeStart;
         this.eventTimeEnd = eventTimeEnd;
         this.venueAddress = venueAddress;
@@ -36,13 +36,13 @@ public class Event {
 
     public Event(String eventName,
                  String sport,
-                 Date matchDate,
+                 Date eventDate,
                  Time eventTimeStart,
                  Time eventTimeEnd,
                  String venueAddress,
                  String eventStatus,
                  int venueCapacity) {
-        this(0, eventName, sport, matchDate, eventTimeStart, eventTimeEnd, venueAddress, eventStatus, venueCapacity);
+        this(0, eventName, sport, eventDate, eventTimeStart, eventTimeEnd, venueAddress, eventStatus, venueCapacity);
     }
 
     public int getEventId() {
@@ -69,12 +69,12 @@ public class Event {
         this.sport = sport;
     }
 
-    public Date getMatchDate() {
-        return matchDate;
+    public Date getEventDate() {
+        return eventDate;
     }
 
-    public void setMatchDate(Date matchDate) {
-        this.matchDate = matchDate;
+    public void setEventDate(Date eventDate) {
+        this.eventDate = eventDate;
     }
 
     public Time getEventTimeStart() {

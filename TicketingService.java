@@ -193,7 +193,7 @@ public class TicketingService {
     }
 
     private Event fetchEvent(Connection conn, int eventId, boolean forUpdate) throws SQLException {
-        String sql = "SELECT event_id, event_name, sport, match_date, event_time_start, event_time_end, " +
+        String sql = "SELECT event_id, event_name, sport, event_date, event_time_start, event_time_end, " +
                 "venue_address, venue_capacity, event_status FROM event WHERE event_id = ? " + (forUpdate ? "FOR UPDATE" : "");
 
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -205,7 +205,7 @@ public class TicketingService {
                             rs.getInt("event_id"),
                             rs.getString("event_name"),
                             rs.getString("sport"),
-                            rs.getDate("match_date"),
+                            rs.getDate("event_date"),
                             rs.getTime("event_time_start"),
                             rs.getTime("event_time_end"),
                             rs.getString("venue_address"),
@@ -221,7 +221,7 @@ public class TicketingService {
     private Match fetchMatch(Connection conn, int matchId, boolean forUpdate) throws SQLException {
         String sql = "SELECT m.match_id, m.event_id, e.event_name, m.match_type, " +
                 "m.match_time_start, m.match_time_end, m.status, m.score_summary, " +
-                "e.match_date AS event_match_date " +
+                "e.event_date AS event_match_date " +
                 "FROM `match` m INNER JOIN event e ON m.event_id = e.event_id " +
                 "WHERE m.match_id = ? " + (forUpdate ? "FOR UPDATE" : "");
 
@@ -281,7 +281,7 @@ public class TicketingService {
         if (event == null || saleTimestamp == null) {
             return;
         }
-        LocalDate baseDate = event.getMatchDate().toLocalDate();
+        LocalDate baseDate = event.getEventDate().toLocalDate();
         LocalTime baseTime = event.getEventTimeStart().toLocalTime();
         if (match != null && match.getMatchTimeStart() != null) {
             baseTime = match.getMatchTimeStart().toLocalTime();
@@ -409,7 +409,7 @@ public class TicketingService {
             throw new IllegalStateException("Cannot sell tickets for a cancelled event.");
         }
 
-        LocalDate eventDate = event.getMatchDate().toLocalDate();
+        LocalDate eventDate = event.getEventDate().toLocalDate();
         LocalTime startTime = event.getEventTimeStart().toLocalTime();
         LocalDateTime eventStart = LocalDateTime.of(eventDate, startTime);
 

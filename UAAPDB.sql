@@ -6,7 +6,7 @@ CREATE TABLE event (
   event_id          INT           NOT NULL AUTO_INCREMENT,
   event_name        VARCHAR(120)  NOT NULL,
   sport             ENUM('Basketball','Volleyball') NOT NULL,
-  match_date        DATE          NOT NULL,
+  event_date        DATE          NOT NULL,
   event_time_start  TIME          NOT NULL,
   event_time_end    TIME          NOT NULL,
   venue_address     ENUM('Mall of Asia Arena','Smart Araneta Coliseum','PhilSports Arena','Ynares Center','Filoil EcoOil Centre')  NOT NULL,
@@ -260,7 +260,7 @@ VALUES
 ('Adamson Soaring Falcons', 15, 5, 10, 15);
 
 -- Events (10 datasets)
-INSERT INTO event (event_name, sport, match_date, event_time_start, event_time_end, venue_address, venue_capacity, event_status)
+INSERT INTO event (event_name, sport, event_date, event_time_start, event_time_end, venue_address, venue_capacity, event_status)
 VALUES
 ('UAAP S87 Basketball - Opening Day', 'Basketball', '2025-11-15', '14:00:00', '18:30:00', 'Mall of Asia Arena', 15000, 'Completed'),
 ('UAAP S87 Basketball - Round 1 Week 2', 'Basketball', '2025-11-20', '16:00:00', '18:00:00', 'Smart Araneta Coliseum', 16000, 'Completed'),
@@ -503,3 +503,18 @@ VALUES
 ('Daniel', 'Torres', 'Confirmed', 'Stat Crew', 'UAAP Statistics Department', '0917-000-8888', 1006, 1007),
 ('Isabel', 'Fernandez', 'Confirmed', 'Singer', 'ABS-CBN Events', '0917-000-9999', 1000, 1000),
 ('Ramon', 'Garcia', 'Confirmed', 'Halftime Entertainment', 'UAAP Entertainment Group', '0917-001-0000', 1008, 1008);
+
+use Uaapdbsql;
+SELECT e.event_id, 
+       e.event_name, 
+       e.sport, 
+       e.event_date,
+       sat.match_id, 
+       SUM(IF(sat.sale_status = 'Sold', sat.quantity, 0)) AS tickets_sold,
+       SUM(IF(sat.sale_status = 'Sold', sat.total_price, 0)) AS revenue,
+       DATE(sat.sale_datetime) AS sale_day
+FROM event e
+LEFT JOIN seat_and_ticket sat ON sat.event_id = e.event_id
+
+GROUP BY e.event_id, sat.match_id, sale_day
+ORDER BY sale_day, e.event_name;

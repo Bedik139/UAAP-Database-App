@@ -13,7 +13,7 @@ public class MatchDAO {
     private static final String BASE_SELECT =
             "SELECT m.match_id, m.event_id, e.event_name, m.match_type, " +
             "m.match_time_start, m.match_time_end, m.status, m.score_summary, " +
-            "e.match_date AS event_match_date " +
+            "e.event_date AS event_match_date " +
             "FROM `match` m INNER JOIN event e ON m.event_id = e.event_id ";
 
     public void insertMatch(Match match) throws SQLException {
@@ -152,13 +152,13 @@ public class MatchDAO {
     }
 
     private EventWindow fetchEventWindow(Connection conn, int eventId) throws SQLException {
-        String sql = "SELECT match_date, event_time_start, event_time_end, sport FROM event WHERE event_id = ?";
+        String sql = "SELECT event_date, event_time_start, event_time_end, sport FROM event WHERE event_id = ?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, eventId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     return new EventWindow(
-                            rs.getDate("match_date"),
+                            rs.getDate("event_date"),
                             rs.getTime("event_time_start"),
                             rs.getTime("event_time_end"),
                             rs.getString("sport")
