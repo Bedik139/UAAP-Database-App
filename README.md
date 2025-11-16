@@ -139,19 +139,5 @@ Ticket 3 - Courtside: P1200
 
 Prices are inherited from seat assignments and can be customized per venue/event.
 
-TROUBLESHOOTING
-
-Verify lib/mysql-connector-j-9.5.0.jar is in classpath
-
-Connection Failed
-Update credentials in Database.java
-Ensure MySQL server is running
-Verify uaap_db database exists
-
-Compilation Errors
-Use correct classpath separator (semicolon Windows, colon Unix)
-Ensure all .java files are in project root
-Check JDK version (11+)
-
 UAAP TEAMS
 Ateneo, De La Salle, FEU, UP, UST, NU, UE, Adamson
