@@ -1,12 +1,10 @@
 ===============================================================================
                     UAAP EVENT MANAGEMENT SYSTEM
 ===============================================================================
-
-For Our CCINFOM Course:
-Team Leader: SANTOS, John Benedict G.
-             NAÑAWA, Alfred Brant A.
-             REYES, Ivan Kenneth C.
-             YU, Chrisander Jervin C.
+For Our CCINFOM Course: Team Leader: SANTOS, John Benedict G. 
+                                     NAÑAWA, Alfred Brant A.
+                                     REYES, Ivan Kenneth C. 
+                                     YU, Chrisander Jervin C.
 
 PURPOSE
 -------
@@ -31,19 +29,14 @@ PREREQUISITES
 
 ===============================================================================
 DATABASE SETUP
-===============================================================================
 
-STEP 1: RUN THE SQL SCHEMA
----------------------------
-Execute UAAPDB.sql in MySQL Workbench or command line:
-  mysql -u root -p < UAAPDB.sql
+1. Create Database
+CREATE DATABASE uaap_db;
+USE uaap_db;
 
-This will:
-- Drop and recreate database: UAAPDBSQL
-- Create all tables with proper constraints and relationships
+2. Run Schema
+Execute UAAPDB.sql to create all tables with proper constraints:
 
-DATABASE TABLES
----------------
 Core Tables:
   - event: Event details (sport, venue, dates, capacity, status)
   - match: Individual matches linked to events
@@ -66,46 +59,8 @@ Ticketing Tables:
 Operations Tables:
   - event_personnel: Staff assignments (ushers, referees, entertainers, etc.)
 
+Run via .bat File and enter your mysql pwd and username
 
-===============================================================================
-RUNNING THE APPLICATION
-===============================================================================
-
-SIMPLE METHOD (RECOMMENDED)
-----------------------------
-1. Double-click runProgram.bat
-2. The batch file will:
-   - Check if Java is installed
-   - Automatically compile all Java files
-   - Prompt you for MySQL credentials:
-     * MySQL Username (default: root)
-     * MySQL Password
-   - Launch the application with your credentials
-
-Note: The batch file compiles and runs the application automatically. 
-No need to manually edit any configuration files!
-
-
-MANUAL COMPILATION (ALTERNATIVE)
----------------------------------
-If you prefer to compile manually:
-
-Windows:
-  cd javaFiles
-  javac -d ../classes -cp "../lib/mysql-connector-j-9.5.0.jar" *.java
-  cd ..
-  java -Ddb.user=YOUR_USERNAME -Ddb.password=YOUR_PASSWORD ^
-       -cp "classes;lib/*" UAAPApp
-
-macOS/Linux:
-  cd javaFiles
-  javac -d ../classes -cp "../lib/mysql-connector-j-9.5.0.jar" *.java
-  cd ..
-  java -Ddb.user=YOUR_USERNAME -Ddb.password=YOUR_PASSWORD \
-       -cp "classes:lib/*" UAAPApp
-
-
-===============================================================================
 APPLICATION STRUCTURE
 ===============================================================================
 
@@ -129,54 +84,41 @@ MANAGER DASHBOARD (11 TABS)
    - Set match type: Elimination/Semifinals/Finals
    - Match Spotlight displays team crests
 
-3. MATCH TEAMS TAB
-   - Assign home/away teams with live scoring
-   - Team logos rendered inline
-   - Real-time score updates
+3. Match Teams
+Assign home/away teams with live scoring
+Team logos rendered inline
 
-4. QUARTER SCORES TAB (Basketball)
-   - Manage quarter-by-quarter breakdown (Q1-Q4)
-   - Auto-generated performance reports
-   - Running totals and aggregation
+4. Quarter Scores (Basketball)
+Manage quarter-by-quarter breakdown (Q1-Q4)
+Auto-generated performance reports
 
-5. SET SCORES TAB (Volleyball)
-   - Set-by-set scoring (1-5 sets)
-   - Formatted breakdown display
-   - Set winners tracked automatically
+5. Set Scores (Volleyball)
+Set-by-set scoring (1-5 sets)
+Formatted breakdown display
 
-6. SEAT AND TICKET TAB
-   - Central sales console
-   - Process ticket purchases with seat selection
-   - Handle refunds with automatic seat release
-   - Match-specific ticket linking
+6. Seat and Ticket
+Central sales console
+Process refunds with automatic seat release
+Match-specific ticket linking
 
-7. EVENT PERSONNEL TAB
-   - Staff management with role presets
-   - Optional match assignments
-   - Track personnel by event
+7. Event Personnel
+Staff management with role presets
+Optional match assignments
 
-8. TEAMS TAB
-   - Manage team rosters
-   - Auto-calculated W/L/Games statistics
-   - Season standings tracking
+8. Teams
+Team rosters with auto-calculated W/L/Games
+Season standings tracking
 
-9. PLAYERS TAB
-   - Individual player profiles
-   - Jersey numbers, biometrics, and scores
-   - Running statistics aggregation
+9. Players
+Individual profiles: jersey number, biometrics, scores
+Running statistics aggregation
 
-10. CUSTOMERS TAB
-    - Customer database management
-    - Purchase history tracking
-    - Contact information and preferences
-
-11. REPORTS TAB (5 DASHBOARDS)
-    - Season Standings: Win percentage sorted rankings
-    - Ticket Sales: Date-range filtered transactions
-    - Venue Utilization: Monthly occupancy percentage
-    - Ticket Revenue: Revenue breakdown by seat type
-    - Player Statistics: Individual scoring leaders
-
+10. Reports (5 Dashboards)
+Season Standings - Win percentage sorted rankings
+Ticket Sales - Date-range filtered transactions  
+Venue Utilization - Monthly occupancy percentage
+Ticket Revenue - Revenue breakdown by seat type
+Player Statistics - Individual scoring leaders
 
 CUSTOMER PORTAL (3 TABS)
 -------------------------
@@ -208,145 +150,13 @@ CUSTOMER PORTAL (3 TABS)
    - Match details and scheduling
 
 
-===============================================================================
-DATABASE TRANSACTIONS
-===============================================================================
-
-TRANSACTION 1: SCHEDULING A MATCH
-----------------------------------
-- Verifies event exists and is in 'Scheduled' status
-- Validates both participating teams exist
-- Checks venue availability (prevents time overlap)
-- Inserts match with proper foreign key constraints
-- Atomic operation with rollback on failure
-
-TRANSACTION 2: PURCHASING A TICKET
------------------------------------
-- Confirms match is open for ticketing (event not completed)
-- Locks available seat with SELECT FOR UPDATE
-- Creates or retrieves customer record
-- Records sale in seat_and_ticket with audit trail
-- Updates seat status to 'Sold' (atomic operation)
-- Auto-calculates total_price = quantity × unit_price
-- Commits only if all steps succeed
-
-TRANSACTION 3: PROCESSING A REFUND
------------------------------------
-- Validates ticket exists and event hasn't started
-- Creates refund audit record with timestamp
-- Updates seat_and_ticket status to 'Refunded'
-- Releases seat (status changed to 'Available')
-- Logs refund reason, agent, and customer details
-
-
-===============================================================================
-VENUE CAPACITIES
-===============================================================================
-
-Mall of Asia Arena       : 15,000 seats
-Smart Araneta Coliseum   : 16,000 seats
-PhilSports Arena         :  8,000 seats
-Ynares Center           : 10,000 seats
-Filoil EcoOil Centre    :  8,000 seats
-
-
-===============================================================================
 DEFAULT TICKET TIERS
 ===============================================================================
 
-Ticket 1 - General Admission : P300
-Ticket 2 - Upper Box         : P500
-Ticket 3 - Lower Box         : P750
-Ticket 4 - Courtside         : P1,200
-Ticket 5 - Patron            : P400
+Ticket 1 - General Admission / Upper Box: P500
+Ticket 2 - Lower Box: P750  
 
-Note: Prices are inherited from seat assignments and can be customized 
-per venue/event.
+Prices are inherited from seat assignments and can be customized per venue/event.
 
-
-===============================================================================
-UAAP TEAMS (Season 87)
-===============================================================================
-
-- Ateneo Blue Eagles
-- De La Salle Green Archers
-- FEU Tamaraws
-- UP Fighting Maroons
-- UST Growling Tigers
-- NU Bulldogs
-- UE Red Warriors
-- Adamson Soaring Falcons
-
-Team logos are automatically loaded from assets/logos/ directory.
-
-
-===============================================================================
-PROJECT STRUCTURE
-===============================================================================
-
--CCINFOM-S14-07-DB-Application/
-├── README.md                       (Markdown version)
-├── runProgram.bat                  (Automated compilation and execution)
-├── UAAPDB.sql                      (Database schema and setup)
-├── assets/
-│   └── logos/                      (Team logos and UAAP branding)
-├── lib/
-│   └── mysql-connector-j-9.5.0.jar (MySQL JDBC driver)
-├── javaFiles/                      (All source code)
-│   ├── UAAPApp.java               (Application entry point)
-│   ├── Database.java              (Database connection manager)
-│   ├── UAAPMainMenuFrame.java     (Main menu interface)
-│   ├── ManagerDashboardFrame.java (Manager portal)
-│   ├── CustomerPortalFrame.java   (Customer portal)
-│   ├── *DAO.java                  (Data Access Objects)
-│   ├── *Panel.java                (UI Components)
-│   └── *.java                     (Models and utilities)
-└── classes/                        (Compiled .class files)
-
-
-===============================================================================
-FEATURES HIGHLIGHTS
-===============================================================================
-
-✓ Interactive seat selection with visual stadium layout
-✓ Real-time seat availability tracking
-✓ Transaction-safe ticket booking (no double-booking)
-✓ Automatic price calculation and revenue tracking
-✓ Comprehensive refund system with audit logging
-✓ Live score tracking for basketball and volleyball
-✓ Season standings with automatic W/L calculation
-✓ Player statistics and performance analytics
-✓ Date-range filtered reports and analytics
-✓ Venue utilization and occupancy reports
-✓ Event personnel management and scheduling
-✓ Team roster and player profile management
-✓ Customizable ticket tiers and pricing
-✓ Modern UI with team branding and logos
-
-
-===============================================================================
-TECHNICAL SPECIFICATIONS
-===============================================================================
-
-Programming Language: Java (JDK 11+)
-Database: MySQL 8.0+
-UI Framework: Java Swing
-Architecture: MVC Pattern with DAO Layer
-JDBC Driver: MySQL Connector/J 9.5.0
-Transaction Management: ACID-compliant MySQL transactions
-Character Encoding: UTF-8
-Database Timezone: UTC
-
-
-===============================================================================
-DEVELOPMENT TEAM
-===============================================================================
-
-CCINFOM S14 Group 07
-Database Application Development Project
-Academic Year 2025-2026, Term 1
-
-
-===============================================================================
-END OF README
-===============================================================================
+UAAP TEAMS
+Ateneo, De La Salle, FEU, UP, UST, NU, UE, Adamson
