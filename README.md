@@ -2,6 +2,12 @@
                     UAAP EVENT MANAGEMENT SYSTEM
 ===============================================================================
 
+For Our CCINFOM Course:
+Team Leader: SANTOS, John Benedict G.
+             NAÑAWA, Alfred Brant A.
+             REYES, Ivan Kenneth C.
+             YU, Chrisander Jervin C.
+
 PURPOSE
 -------
 Replaces Excel spreadsheets with a comprehensive database system for:
