@@ -2,9 +2,9 @@
                     UAAP EVENT MANAGEMENT SYSTEM
 ===============================================================================
 For Our CCINFOM Course: Team Leader: SANTOS, John Benedict G. 
-                                     NAÑAWA, Alfred Brant A.
-                                     REYES, Ivan Kenneth C. 
-                                     YU, Chrisander Jervin C.
+                                     ,NAÑAWA, Alfred Brant A.
+                                     ,REYES, Ivan Kenneth C. 
+                                     ,YU, Chrisander Jervin C.
 
 PURPOSE
 -------
@@ -160,3 +160,4 @@ Prices are inherited from seat assignments and can be customized per venue/event
 
 UAAP TEAMS
 Ateneo, De La Salle, FEU, UP, UST, NU, UE, Adamson
+
