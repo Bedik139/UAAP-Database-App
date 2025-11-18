@@ -53,7 +53,8 @@ The system features two main portals:
 2. **Customer Portal** - 3 tabs for ticket operations and match viewing
 
 ## Supported Sports
-Basketball, Volleyball, and other UAAP sports events
+Basketball(mens), Volleyball (womens)
 
 ## Participating Teams
 Ateneo, De La Salle, FEU, UP, UST, NU, UE, Adamson
+
