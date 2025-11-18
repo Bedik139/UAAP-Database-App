@@ -24,12 +24,17 @@ public final class UAAPTheme {
     public static final Color ACCENT_MINT = new Color(110, 231, 183);         // Fresh mint
     public static final Color ACCENT_TEAL = new Color(20, 184, 166);          // Teal accent
     
+    // Alias colors for consistency across components
+    public static final Color UAAP_GREEN = PRIMARY_GREEN;                      // Selected date in calendar
+    public static final Color UAAP_BLUE = ACCENT_BLUE;                         // Today's date in calendar
+    
     // Surface Colors - Modern & Clean
     public static final Color LIGHT_SURFACE = new Color(240, 253, 244);       // Very light green tint
     public static final Color CARD_BACKGROUND = Color.WHITE;
     public static final Color CARD_BORDER = new Color(209, 250, 229);         // Light green border
     public static final Color DIVIDER = new Color(229, 231, 235);
     public static final Color HOVER_BG = new Color(236, 253, 245);            // Subtle green hover
+    public static final Color HOVER_BACKGROUND = HOVER_BG;                     // Alias for consistency
     
     // Text Colors - High Contrast
     public static final Color TEXT_PRIMARY = new Color(17, 24, 39);           // Almost black
@@ -292,6 +297,60 @@ public final class UAAPTheme {
             BorderFactory.createLineBorder(CARD_BORDER, 1),
             BorderFactory.createEmptyBorder(6, 8, 6, 8)
         ));
+        combo.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        
+        // If the combo box is editable, style its editor component for consistent UX
+        if (combo.isEditable()) {
+            Component editor = combo.getEditor().getEditorComponent();
+            if (editor instanceof javax.swing.text.JTextComponent) {
+                javax.swing.text.JTextComponent textEditor = (javax.swing.text.JTextComponent) editor;
+                textEditor.setFont(LABEL_FONT);
+                textEditor.setBorder(BorderFactory.createEmptyBorder(2, 4, 2, 4));
+                
+                // Add focus highlighting for editable combo boxes
+                textEditor.addFocusListener(new java.awt.event.FocusAdapter() {
+                    @Override
+                    public void focusGained(java.awt.event.FocusEvent e) {
+                        combo.setBorder(BorderFactory.createCompoundBorder(
+                            BorderFactory.createLineBorder(PRIMARY_GREEN, 2),
+                            BorderFactory.createEmptyBorder(5, 7, 5, 7)
+                        ));
+                        textEditor.selectAll(); // Highlight text on focus for better UX
+                    }
+                    
+                    @Override
+                    public void focusLost(java.awt.event.FocusEvent e) {
+                        combo.setBorder(BorderFactory.createCompoundBorder(
+                            BorderFactory.createLineBorder(CARD_BORDER, 1),
+                            BorderFactory.createEmptyBorder(6, 8, 6, 8)
+                        ));
+                    }
+                });
+            }
+        }
+        
+        // Add focus listener for non-editable combo boxes as well
+        combo.addFocusListener(new java.awt.event.FocusAdapter() {
+            @Override
+            public void focusGained(java.awt.event.FocusEvent e) {
+                if (!combo.isEditable()) {
+                    combo.setBorder(BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(PRIMARY_GREEN, 2),
+                        BorderFactory.createEmptyBorder(5, 7, 5, 7)
+                    ));
+                }
+            }
+            
+            @Override
+            public void focusLost(java.awt.event.FocusEvent e) {
+                if (!combo.isEditable()) {
+                    combo.setBorder(BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(CARD_BORDER, 1),
+                        BorderFactory.createEmptyBorder(6, 8, 6, 8)
+                    ));
+                }
+            }
+        });
     }
 
     /**

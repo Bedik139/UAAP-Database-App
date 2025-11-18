@@ -2,6 +2,8 @@ public class Team {
 
     private int teamId;
     private String teamName;
+    private String gender;
+    private String sport;
     private int seasonsPlayed;
     private int standingWins;
     private int standingLosses;
@@ -11,12 +13,16 @@ public class Team {
 
     public Team(int teamId,
                 String teamName,
+                String gender,
+                String sport,
                 int seasonsPlayed,
                 int standingWins,
                 int standingLosses,
                 int totalGamesPlayed) {
         this.teamId = teamId;
         this.teamName = teamName;
+        this.gender = gender;
+        this.sport = sport;
         this.seasonsPlayed = seasonsPlayed;
         this.standingWins = standingWins;
         this.standingLosses = standingLosses;
@@ -24,11 +30,13 @@ public class Team {
     }
 
     public Team(String teamName,
+                String gender,
+                String sport,
                 int seasonsPlayed,
                 int standingWins,
                 int standingLosses,
                 int totalGamesPlayed) {
-        this(0, teamName, seasonsPlayed, standingWins, standingLosses, totalGamesPlayed);
+        this(0, teamName, gender, sport, seasonsPlayed, standingWins, standingLosses, totalGamesPlayed);
     }
 
     public int getTeamId() {
@@ -45,6 +53,22 @@ public class Team {
 
     public void setTeamName(String teamName) {
         this.teamName = teamName;
+    }
+
+    public String getGender() {
+        return gender;
+    }
+
+    public void setGender(String gender) {
+        this.gender = gender;
+    }
+
+    public String getSport() {
+        return sport;
+    }
+
+    public void setSport(String sport) {
+        this.sport = sport;
     }
 
     public int getSeasonsPlayed() {

@@ -74,18 +74,9 @@ public class MatchQuarterScoreManagerPanel extends JPanel {
         panel.add(Box.createHorizontalStrut(16));
         panel.add(matchInfoLabel);
 
-        quarterSummaryArea = new JTextArea(4, 40);
-        quarterSummaryArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
-        quarterSummaryArea.setEditable(false);
-        quarterSummaryArea.setLineWrap(true);
-        quarterSummaryArea.setWrapStyleWord(true);
-        quarterSummaryArea.setText("Load a match to view quarter-by-quarter scoring.");
-        JScrollPane summaryScroll = new JScrollPane(quarterSummaryArea);
-        summaryScroll.setBorder(BorderFactory.createTitledBorder("Quarter Breakdown"));
-
+   
         JPanel container = new JPanel(new BorderLayout());
         container.add(panel, BorderLayout.NORTH);
-        container.add(summaryScroll, BorderLayout.SOUTH);
 
         add(container, BorderLayout.NORTH);
     }
@@ -162,7 +153,6 @@ public class MatchQuarterScoreManagerPanel extends JPanel {
         panel.add(updateButton);
         panel.add(deleteButton);
         panel.add(clearButton);
-
         add(panel, BorderLayout.SOUTH);
 
         setFormEnabled(false);
@@ -220,7 +210,6 @@ public class MatchQuarterScoreManagerPanel extends JPanel {
         if (currentMatchId == null) {
             teamCombo.setModel(model);
             teamCombo.setEnabled(false);
-            updateSummaryArea();
             return;
         }
         try {
@@ -239,7 +228,6 @@ public class MatchQuarterScoreManagerPanel extends JPanel {
         if (model.getSize() > 0) {
             teamCombo.setSelectedIndex(0);
         }
-        updateSummaryArea();
     }
 
     private void reloadScores() {
@@ -247,7 +235,6 @@ public class MatchQuarterScoreManagerPanel extends JPanel {
         cachedScores.clear();
 
         if (currentMatchId == null) {
-            updateSummaryArea();
             return;
         }
         try {
@@ -262,7 +249,6 @@ public class MatchQuarterScoreManagerPanel extends JPanel {
         } catch (SQLException ex) {
             showError("Error loading scores:\n" + ex.getMessage());
         }
-        updateSummaryArea();
     }
 
     private void handleAdd() {
@@ -436,7 +422,6 @@ public class MatchQuarterScoreManagerPanel extends JPanel {
         cachedScores.clear();
         teamCombo.setModel(new DefaultComboBoxModel<>());
         loadedTeams = new ArrayList<>();
-        updateSummaryArea();
         setFormEnabled(false);
     }
 
@@ -446,57 +431,6 @@ public class MatchQuarterScoreManagerPanel extends JPanel {
 
     private String safeSportLabel(String sport) {
         return sport == null || sport.isBlank() ? "Unknown Sport" : sport;
-    }
-
-    private void updateSummaryArea() {
-        if (quarterSummaryArea == null) {
-            return;
-        }
-        if (currentMatchId == null) {
-            quarterSummaryArea.setText("Load a match to view quarter-by-quarter scoring.");
-            quarterSummaryArea.setCaretPosition(0);
-            return;
-        }
-        if (loadedTeams.isEmpty()) {
-            quarterSummaryArea.setText("Assign participating teams to this match to see the breakdown.");
-            quarterSummaryArea.setCaretPosition(0);
-            return;
-        }
-        if (cachedScores.isEmpty()) {
-            quarterSummaryArea.setText("No quarter scores recorded yet.");
-            quarterSummaryArea.setCaretPosition(0);
-            return;
-        }
-
-        List<MatchTeam> orderedTeams = new ArrayList<>(loadedTeams);
-        orderedTeams.sort(Comparator.comparing((MatchTeam team) -> !team.isHomeTeam()));
-
-        Map<Integer, Map<Integer, Integer>> perQuarter = new TreeMap<>();
-        for (MatchQuarterScore score : cachedScores) {
-            perQuarter
-                    .computeIfAbsent(score.getQuarterNo(), key -> new TreeMap<>())
-                    .put(score.getTeamId(), score.getQuarterPoints());
-        }
-
-        StringBuilder builder = new StringBuilder();
-        builder.append(String.format("%-10s", "Quarter"));
-        for (MatchTeam team : orderedTeams) {
-            builder.append(String.format("%-18s", team.getTeamName()));
-        }
-        builder.append(System.lineSeparator());
-
-        for (Map.Entry<Integer, Map<Integer, Integer>> entry : perQuarter.entrySet()) {
-            builder.append(String.format("%-10s", "Q" + entry.getKey()));
-            Map<Integer, Integer> pointsByTeam = entry.getValue();
-            for (MatchTeam team : orderedTeams) {
-                int points = pointsByTeam.getOrDefault(team.getTeamId(), 0);
-                builder.append(String.format("%-18d", points));
-            }
-            builder.append(System.lineSeparator());
-        }
-
-        quarterSummaryArea.setText(builder.toString());
-        quarterSummaryArea.setCaretPosition(0);
     }
 
     private void addFormField(JPanel panel, int row, String labelText, JComponent component) {

@@ -22,14 +22,14 @@ public class ManagerDashboardFrame extends JFrame {
         JTabbedPane tabs = new JTabbedPane();
         tabs.addTab("Events", new EventManagerPanel());
         tabs.addTab("Matches", new MatchManagerPanel());
+        tabs.addTab("Event Personnel", new EventPersonnelManagerPanel());
+        tabs.addTab("Teams", new TeamManagerPanel());
         tabs.addTab("Match Teams", new MatchTeamManagerPanel());
+        tabs.addTab("Players", new PlayerManagerPanel());
         tabs.addTab("Quarter Scores (BB)", new MatchQuarterScoreManagerPanel());
         tabs.addTab("Set Scores (VB)", new MatchSetScoreManagerPanel());
         tabs.addTab("Seat & Ticket", new SeatAndTicketManagerPanel());
         tabs.addTab("Refund Audit", new RefundAuditPanel());
-        tabs.addTab("Event Personnel", new EventPersonnelManagerPanel());
-        tabs.addTab("Teams", new TeamManagerPanel());
-        tabs.addTab("Players", new PlayerManagerPanel());
         tabs.addTab("Reports", new ReportsPanel());
 
         UAAPTheme.styleTabPane(tabs);

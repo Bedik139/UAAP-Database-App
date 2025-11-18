@@ -1,6 +1,7 @@
 import java.awt.*;
 import java.sql.Date;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.util.List;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -12,7 +13,9 @@ public class RefundAuditPanel extends JPanel {
     private JTable refundTable;
     private JTextField searchField;
     private JTextField fromDateField;
+    private JButton fromDateButton;
     private JTextField toDateField;
+    private JButton toDateButton;
     private JLabel totalRefundsLabel;
     private JLabel totalAmountLabel;
 
@@ -60,12 +63,28 @@ public class RefundAuditPanel extends JPanel {
         filterPanel.add(new JLabel("From Date:"));
         fromDateField = new JTextField(10);
         fromDateField.setToolTipText("Format: YYYY-MM-DD");
+        fromDateField.setEditable(false);
         filterPanel.add(fromDateField);
+        
+        fromDateButton = new JButton("...");
+        fromDateButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        fromDateButton.setToolTipText("Select from date");
+        UAAPTheme.styleInfoButton(fromDateButton);
+        fromDateButton.addActionListener(e -> showFromDatePicker());
+        filterPanel.add(fromDateButton);
 
         filterPanel.add(new JLabel("To Date:"));
         toDateField = new JTextField(10);
         toDateField.setToolTipText("Format: YYYY-MM-DD");
+        toDateField.setEditable(false);
         filterPanel.add(toDateField);
+        
+        toDateButton = new JButton("...");
+        toDateButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        toDateButton.setToolTipText("Select to date");
+        UAAPTheme.styleInfoButton(toDateButton);
+        toDateButton.addActionListener(e -> showToDatePicker());
+        filterPanel.add(toDateButton);
 
         JButton searchButton = new JButton("Search");
         UAAPTheme.styleActionButton(searchButton);
@@ -246,6 +265,40 @@ public class RefundAuditPanel extends JPanel {
         loadRefundData(null, null, null);
     }
 
+    private void showFromDatePicker() {
+        LocalDate initialDate = LocalDate.now();
+        String currentText = fromDateField.getText().trim();
+        if (!currentText.isEmpty()) {
+            try {
+                initialDate = LocalDate.parse(currentText);
+            } catch (Exception ex) {
+                // Use today if parsing fails
+            }
+        }
+        
+        LocalDate selectedDate = DatePickerPanel.showDatePickerDialog(this, initialDate);
+        if (selectedDate != null) {
+            fromDateField.setText(selectedDate.toString());
+        }
+    }
+    
+    private void showToDatePicker() {
+        LocalDate initialDate = LocalDate.now();
+        String currentText = toDateField.getText().trim();
+        if (!currentText.isEmpty()) {
+            try {
+                initialDate = LocalDate.parse(currentText);
+            } catch (Exception ex) {
+                // Use today if parsing fails
+            }
+        }
+        
+        LocalDate selectedDate = DatePickerPanel.showDatePickerDialog(this, initialDate);
+        if (selectedDate != null) {
+            toDateField.setText(selectedDate.toString());
+        }
+    }
+    
     public void refreshData() {
         resetFilters();
     }

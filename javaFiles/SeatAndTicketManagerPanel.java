@@ -144,7 +144,7 @@ public class SeatAndTicketManagerPanel extends JPanel {
 
     private void initTable() {
         tableModel = new DefaultTableModel(
-                new Object[]{"Record ID", "Seat", "Event", "Customer", "Sold At", "Quantity", "Unit Price", "Total Price", "Ticket", "Match", "Status"}, 0
+                new Object[]{"Seat", "Event", "Customer", "Sold At", "Quantity", "Unit Price", "Total Price", "Ticket", "Match", "Status"}, 0
         ) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -344,7 +344,6 @@ public class SeatAndTicketManagerPanel extends JPanel {
             cachedRecords = seatAndTicketDAO.getAllRecords();
             for (SeatAndTicket record : cachedRecords) {
                 tableModel.addRow(new Object[]{
-                        record.getRecordId(),
                         record.getSeatLabel(),
                         record.getEventName(),
                         record.getCustomerName(),
@@ -621,17 +620,16 @@ public class SeatAndTicketManagerPanel extends JPanel {
         JPanel panel = new JPanel(new GridBagLayout());
         panel.setBorder(BorderFactory.createTitledBorder("Seat and Ticket Sale"));
 
-        addFormField(panel, 0, 0, "Record ID (auto)", recordIdField);
-        addFormField(panel, 0, 1, "Seat", seatCombo);
-        addFormField(panel, 1, 0, "Event", eventCombo);
-        addFormField(panel, 1, 1, "Customer", customerCombo);
-        addFormField(panel, 2, 0, "Sale Timestamp", saleDatetimeField);
-        addFormField(panel, 2, 1, "Quantity", quantityField);
-        addFormField(panel, 3, 0, "Ticket", ticketCombo);
-        addFormField(panel, 3, 1, "Match", matchCombo);
-        addFormField(panel, 4, 0, "Unit Price", unitPriceField);
-        addFormField(panel, 4, 1, "Total Price", totalPriceField);
-        addFormField(panel, 5, 0, "Sale Status", statusCombo);
+        addFormField(panel, 0, 0, "Seat", seatCombo);
+        addFormField(panel, 0, 1, "Event", eventCombo);
+        addFormField(panel, 1, 0, "Customer", customerCombo);
+        addFormField(panel, 1, 1, "Sale Timestamp", saleDatetimeField);
+        addFormField(panel, 2, 0, "Quantity", quantityField);
+        addFormField(panel, 2, 1, "Ticket", ticketCombo);
+        addFormField(panel, 3, 0, "Match", matchCombo);
+        addFormField(panel, 3, 1, "Unit Price", unitPriceField);
+        addFormField(panel, 4, 0, "Total Price", totalPriceField);
+        addFormField(panel, 4, 1, "Sale Status", statusCombo);
 
         return panel;
     }

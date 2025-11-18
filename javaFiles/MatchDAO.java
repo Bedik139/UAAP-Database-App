@@ -44,7 +44,7 @@ public class MatchDAO {
 
     public List<Match> getAllMatches() throws SQLException {
         List<Match> matches = new ArrayList<>();
-        String sql = BASE_SELECT + "ORDER BY m.match_id";
+        String sql = BASE_SELECT + "ORDER BY CASE WHEN m.status = 'Completed' THEN 1 ELSE 0 END ASC, m.match_id ASC";
 
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);

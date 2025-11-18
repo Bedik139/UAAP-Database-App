@@ -13,22 +13,42 @@ if errorlevel 1 (
     exit /b 1
 )
 
-echo Please enter your MySQL database credentials:
+REM Compile Java files first
+echo Compiling Java files...
+javac -d classes -cp "lib\mysql-connector-j-9.5.0.jar" javaFiles\*.java 2>compile_errors.txt
+if errorlevel 1 (
+    echo.
+    echo [ERROR] Compilation failed!
+    echo Please check compile_errors.txt for details
+    type compile_errors.txt
+    echo.
+    pause
+    exit /b 1
+)
+echo Compilation successful!
 echo.
-set /p DB_USER="Enter MySQL Username (default: root): "
-set /p DB_PASSWORD="Enter MySQL Password: "
 
-REM Use default values if empty
+echo Please enter your MySQL Workbench credentials:
+echo.
+set /p DB_USER="MySQL Username (default: root): "
 if "%DB_USER%"=="" set DB_USER=root
-if "%DB_PASSWORD%"=="" set DB_PASSWORD=Dlsu1234!
+
+set /p DB_PASSWORD="MySQL Password: "
+if "%DB_PASSWORD%"=="" (
+    echo.
+    echo [ERROR] Password cannot be empty!
+    echo.
+    pause
+    exit /b 1
+)
 
 echo.
 echo Starting UAAP Application...
-echo Connecting to database as user: %DB_USER%
+echo Connecting to database as: %DB_USER%
 echo.
 
 REM Run the application from compiled classes with database credentials
-java -Ddb.user=%DB_USER% -Ddb.password=%DB_PASSWORD% -cp "classes;lib/mysql-connector-j-9.5.0.jar" UAAPApp
+java -Ddb.user=%DB_USER% -Ddb.password=%DB_PASSWORD% -cp "classes;lib/*" UAAPApp
 
 REM If there's an error, pause to see the message
 if errorlevel 1 (

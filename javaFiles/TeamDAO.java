@@ -29,17 +29,19 @@ public class TeamDAO {
 
     public void insertTeam(Team team) throws SQLException {
         String sql = "INSERT INTO team " +
-                "(team_name, seasons_played, standing_wins, standing_losses, total_games_played) " +
-                "VALUES (?, ?, ?, ?, ?)";
+                "(team_name, gender, sport, seasons_played, standing_wins, standing_losses, total_games_played) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             ps.setString(1, team.getTeamName());
-            ps.setInt(2, team.getSeasonsPlayed());
-            ps.setInt(3, team.getStandingWins());
-            ps.setInt(4, team.getStandingLosses());
-            ps.setInt(5, team.getTotalGamesPlayed());
+            ps.setString(2, team.getGender());
+            ps.setString(3, team.getSport());
+            ps.setInt(4, team.getSeasonsPlayed());
+            ps.setInt(5, team.getStandingWins());
+            ps.setInt(6, team.getStandingLosses());
+            ps.setInt(7, team.getTotalGamesPlayed());
 
             ps.executeUpdate();
 
@@ -54,9 +56,7 @@ public class TeamDAO {
     public List<Team> getAllTeams() throws SQLException {
         List<Team> teams = new ArrayList<>();
 
-        seedDefaultTeamsIfMissing();
-
-        String sql = "SELECT team_id, team_name, seasons_played, " +
+        String sql = "SELECT team_id, team_name, gender, sport, seasons_played, " +
                 "standing_wins, standing_losses, total_games_played " +
                 "FROM team ORDER BY team_id";
 
@@ -68,6 +68,8 @@ public class TeamDAO {
                 Team team = new Team(
                         rs.getInt("team_id"),
                         rs.getString("team_name"),
+                        rs.getString("gender"),
+                        rs.getString("sport"),
                         rs.getInt("seasons_played"),
                         rs.getInt("standing_wins"),
                         rs.getInt("standing_losses"),
@@ -115,7 +117,7 @@ public class TeamDAO {
 
     public void updateTeam(Team team) throws SQLException {
         String sql = "UPDATE team SET " +
-                "team_name = ?, seasons_played = ?, standing_wins = ?, " +
+                "team_name = ?, gender = ?, sport = ?, seasons_played = ?, standing_wins = ?, " +
                 "standing_losses = ?, total_games_played = ? " +
                 "WHERE team_id = ?";
 
@@ -123,11 +125,13 @@ public class TeamDAO {
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, team.getTeamName());
-            ps.setInt(2, team.getSeasonsPlayed());
-            ps.setInt(3, team.getStandingWins());
-            ps.setInt(4, team.getStandingLosses());
-            ps.setInt(5, team.getTotalGamesPlayed());
-            ps.setInt(6, team.getTeamId());
+            ps.setString(2, team.getGender());
+            ps.setString(3, team.getSport());
+            ps.setInt(4, team.getSeasonsPlayed());
+            ps.setInt(5, team.getStandingWins());
+            ps.setInt(6, team.getStandingLosses());
+            ps.setInt(7, team.getTotalGamesPlayed());
+            ps.setInt(8, team.getTeamId());
 
             ps.executeUpdate();
         }

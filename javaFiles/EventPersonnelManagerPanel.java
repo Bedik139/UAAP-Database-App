@@ -28,6 +28,16 @@ public class EventPersonnelManagerPanel extends JPanel {
             "Halftime Entertainment"
     };
 
+    private static final String[] AVAILABILITY_STATUS = {
+            "Available",
+            "On Leave",
+            "Sick Leave",
+            "Unavailable",
+            "On Duty",
+            "Standby",
+            "Off Duty"
+    };
+
     private final EventPersonnelDAO personnelDAO = new EventPersonnelDAO();
     private final EventDAO eventDAO = new EventDAO();
     private final MatchDAO matchDAO = new MatchDAO();
@@ -36,10 +46,10 @@ public class EventPersonnelManagerPanel extends JPanel {
     private DefaultTableModel tableModel;
     private List<EventPersonnel> cachedPersonnel = new ArrayList<>();
 
-    private JTextField idField;
+    private Integer selectedPersonnelId;
     private JTextField firstNameField;
     private JTextField lastNameField;
-    private JTextField availabilityField;
+    private JComboBox<String> availabilityCombo;
     private JComboBox<String> roleCombo;
     private JTextField affiliationField;
     private JTextField contactField;
@@ -64,11 +74,6 @@ public class EventPersonnelManagerPanel extends JPanel {
     }
 
     private void initForm() {
-        idField = new JTextField();
-        idField.setEditable(false);
-        idField.setToolTipText("Auto-filled when you select a personnel entry.");
-        UAAPTheme.styleTextField(idField);
-
         firstNameField = new JTextField();
         firstNameField.setToolTipText("First name of the personnel.");
         UAAPTheme.styleTextField(firstNameField);
@@ -77,9 +82,9 @@ public class EventPersonnelManagerPanel extends JPanel {
         lastNameField.setToolTipText("Last name of the personnel.");
         UAAPTheme.styleTextField(lastNameField);
 
-        availabilityField = new JTextField();
-        availabilityField.setToolTipText("Availability description, e.g. 'Available', 'On Leave'.");
-        UAAPTheme.styleTextField(availabilityField);
+        availabilityCombo = new JComboBox<>(AVAILABILITY_STATUS);
+        availabilityCombo.setToolTipText("Current availability status of the personnel.");
+        UAAPTheme.styleComboBox(availabilityCombo);
 
         roleCombo = new JComboBox<>(ROLES);
         roleCombo.setToolTipText("Assigned role during the event.");
@@ -136,6 +141,8 @@ public class EventPersonnelManagerPanel extends JPanel {
                 if (row >= 0 && row < cachedPersonnel.size()) {
                     EventPersonnel personnel = cachedPersonnel.get(row);
                     populateForm(personnel);
+                } else {
+                    selectedPersonnelId = null;
                 }
             }
         });
@@ -258,7 +265,7 @@ public class EventPersonnelManagerPanel extends JPanel {
     }
 
     private void handleUpdate() {
-        if (idField.getText().trim().isEmpty()) {
+        if (selectedPersonnelId == null) {
             showError("Select a personnel entry first.");
             return;
         }
@@ -275,7 +282,7 @@ public class EventPersonnelManagerPanel extends JPanel {
     }
 
     private void handleDelete() {
-        if (idField.getText().trim().isEmpty()) {
+        if (selectedPersonnelId == null) {
             showError("Select a personnel entry first.");
             return;
         }
@@ -291,8 +298,7 @@ public class EventPersonnelManagerPanel extends JPanel {
         }
 
         try {
-            int personnelId = Integer.parseInt(idField.getText().trim());
-            personnelDAO.deletePersonnel(personnelId);
+            personnelDAO.deletePersonnel(selectedPersonnelId);
             showInfo("Personnel deleted.");
             reloadTable();
             clearForm();
@@ -304,14 +310,14 @@ public class EventPersonnelManagerPanel extends JPanel {
     private EventPersonnel formToPersonnel(boolean includeId) {
         String firstName = firstNameField.getText().trim();
         String lastName = lastNameField.getText().trim();
-        String availability = availabilityField.getText().trim();
+        String availability = (String) availabilityCombo.getSelectedItem();
         String role = (String) roleCombo.getSelectedItem();
         String affiliation = affiliationField.getText().trim();
         String contact = contactField.getText().trim();
         Event event = (Event) eventCombo.getSelectedItem();
         Match match = (Match) matchCombo.getSelectedItem();
 
-        if (firstName.isEmpty() || lastName.isEmpty() || availability.isEmpty() || affiliation.isEmpty()) {
+        if (firstName.isEmpty() || lastName.isEmpty() || availability == null || affiliation.isEmpty()) {
             throw new IllegalArgumentException("First name, last name, availability, and affiliation are required.");
         }
         if (event == null) {
@@ -336,17 +342,17 @@ public class EventPersonnelManagerPanel extends JPanel {
         );
 
         if (includeId) {
-            personnel.setPersonnelId(Integer.parseInt(idField.getText().trim()));
+            personnel.setPersonnelId(selectedPersonnelId);
         }
 
         return personnel;
     }
 
     private void populateForm(EventPersonnel personnel) {
-        idField.setText(String.valueOf(personnel.getPersonnelId()));
+        selectedPersonnelId = personnel.getPersonnelId();
         firstNameField.setText(personnel.getFirstName());
         lastNameField.setText(personnel.getLastName());
-        availabilityField.setText(personnel.getAvailabilityStatus());
+        availabilityCombo.setSelectedItem(personnel.getAvailabilityStatus());
         roleCombo.setSelectedItem(personnel.getRole());
         affiliationField.setText(personnel.getAffiliation());
         contactField.setText(personnel.getContactNo() != null ? personnel.getContactNo() : "");
@@ -387,10 +393,10 @@ public class EventPersonnelManagerPanel extends JPanel {
     }
 
     private void clearForm() {
-        idField.setText("");
+        selectedPersonnelId = null;
         firstNameField.setText("");
         lastNameField.setText("");
-        availabilityField.setText("");
+        availabilityCombo.setSelectedIndex(0);
         roleCombo.setSelectedIndex(0);
         affiliationField.setText("");
         contactField.setText("");
@@ -405,15 +411,14 @@ public class EventPersonnelManagerPanel extends JPanel {
         JPanel panel = new JPanel(new GridBagLayout());
         panel.setBorder(BorderFactory.createTitledBorder("Event Personnel Details"));
 
-        addFormField(panel, 0, 0, "Personnel ID (auto)", idField);
-        addFormField(panel, 0, 1, "First Name", firstNameField);
-        addFormField(panel, 1, 0, "Last Name", lastNameField);
-        addFormField(panel, 1, 1, "Availability", availabilityField);
-        addFormField(panel, 2, 0, "Role", roleCombo);
-        addFormField(panel, 2, 1, "Affiliation", affiliationField);
-        addFormField(panel, 3, 0, "Contact No.", contactField);
-        addFormField(panel, 3, 1, "Event", eventCombo);
-        addFormField(panel, 4, 0, "Match", matchCombo);
+        addFormField(panel, 0, 0, "First Name", firstNameField);
+        addFormField(panel, 0, 1, "Last Name", lastNameField);
+        addFormField(panel, 1, 0, "Availability", availabilityCombo);
+        addFormField(panel, 1, 1, "Role", roleCombo);
+        addFormField(panel, 2, 0, "Affiliation", affiliationField);
+        addFormField(panel, 2, 1, "Contact No.", contactField);
+        addFormField(panel, 3, 0, "Event", eventCombo);
+        addFormField(panel, 3, 1, "Match", matchCombo);
 
         return panel;
     }

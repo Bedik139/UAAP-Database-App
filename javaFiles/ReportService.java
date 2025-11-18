@@ -12,25 +12,46 @@ import java.util.List;
 public class ReportService {
 
     public List<TeamStandingRow> getSeasonStandings() throws SQLException {
-        String sql = "SELECT team_id, team_name, standing_wins, standing_losses, total_games_played, " +
-                "CASE WHEN total_games_played = 0 THEN 0 " +
-                "ELSE ROUND((standing_wins / total_games_played) * 100, 2) END AS win_percentage " +
-                "FROM team ORDER BY standing_wins DESC, standing_losses ASC, team_name";
+        return getSeasonStandingsBySport(null);
+    }
+
+    public List<TeamStandingRow> getSeasonStandingsBySport(String sport) throws SQLException {
+        // Get season standings from team table (use stored season statistics)
+        StringBuilder sql = new StringBuilder();
+        sql.append("SELECT t.team_id, t.team_name, ")
+           .append("t.total_games_played, ")
+           .append("t.standing_wins, ")
+           .append("t.standing_losses, ")
+           .append("CASE WHEN t.total_games_played = 0 THEN 0 ")
+           .append("ELSE ROUND((t.standing_wins / t.total_games_played) * 100, 2) END AS win_percentage ")
+           .append("FROM team t ")
+           .append("WHERE 1=1 ");
+        
+        if (sport != null && !sport.trim().isEmpty()) {
+            sql.append("AND t.sport = ? ");
+        }
+        
+        sql.append("ORDER BY t.standing_wins DESC, t.standing_losses ASC, t.team_name");
 
         List<TeamStandingRow> standings = new ArrayList<>();
         try (Connection conn = Database.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
 
-            while (rs.next()) {
-                standings.add(new TeamStandingRow(
-                        rs.getInt("team_id"),
-                        rs.getString("team_name"),
-                        rs.getInt("standing_wins"),
-                        rs.getInt("standing_losses"),
-                        rs.getInt("total_games_played"),
-                        rs.getBigDecimal("win_percentage")
-                ));
+            if (sport != null && !sport.trim().isEmpty()) {
+                ps.setString(1, sport);
+            }
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    standings.add(new TeamStandingRow(
+                            rs.getInt("team_id"),
+                            rs.getString("team_name"),
+                            rs.getInt("standing_wins"),
+                            rs.getInt("standing_losses"),
+                            rs.getInt("total_games_played"),
+                            rs.getBigDecimal("win_percentage")
+                    ));
+                }
             }
         }
         return standings;
@@ -59,7 +80,7 @@ public class ReportService {
         }
 
         sql.append("GROUP BY e.event_id, sat.match_id, sale_day ")
-           .append("ORDER BY sale_day, e.event_name");
+           .append("ORDER BY tickets_sold DESC, e.event_name");
 
         List<TicketSalesRow> rows = new ArrayList<>();
         try (Connection conn = Database.getConnection();

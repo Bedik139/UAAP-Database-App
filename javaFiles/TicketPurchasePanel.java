@@ -6,9 +6,9 @@ import java.awt.Insets;
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.regex.Pattern;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -22,8 +22,10 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSpinner;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SpinnerNumberModel;
 
 public class TicketPurchasePanel extends JPanel {
 
@@ -41,9 +43,9 @@ public class TicketPurchasePanel extends JPanel {
     private JComboBox<Ticket> ticketCombo;
     private JComboBox<Customer> customerCombo;
 
-    private JTextField quantityField;
+    private JSpinner quantitySpinner;
     private JTextField unitPriceField;
-    private JTextField saleDateTimeField;
+    private JLabel totalPriceLabel;
 
     private JTextField firstNameField;
     private JTextField lastNameField;
@@ -51,9 +53,15 @@ public class TicketPurchasePanel extends JPanel {
     private JTextField phoneField;
     private JTextField organizationField;
     private JComboBox<Object> preferredTeamCombo;
-    private JTextField paymentMethodField;
+    private JComboBox<String> paymentMethodCombo;
 
     private JTextArea confirmationArea;
+    
+    // Philippine payment methods
+    private static final String[] PAYMENT_METHODS = {
+        "GCash", "PayMaya", "GoTyme", "Credit Card", 
+        "Debit Card", "Bank Transfer", "Cash"
+    };
 
     public TicketPurchasePanel() {
         setLayout(new BorderLayout(10, 10));
@@ -74,6 +82,7 @@ public class TicketPurchasePanel extends JPanel {
         formScroll.getVerticalScrollBar().setUnitIncrement(16);
 
         add(formScroll, BorderLayout.CENTER);
+        add(buildConfirmationPanel(), BorderLayout.EAST);
         add(buildFooterPanel(), BorderLayout.SOUTH);
         reloadAllData();
     }
@@ -92,6 +101,21 @@ public class TicketPurchasePanel extends JPanel {
 
         seatCombo = new JComboBox<>();
         UAAPTheme.styleComboBox(seatCombo);
+        seatCombo.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public java.awt.Component getListCellRendererComponent(javax.swing.JList<?> list,
+                                                                   Object value,
+                                                                   int index,
+                                                                   boolean isSelected,
+                                                                   boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value instanceof Seat) {
+                    Seat seat = (Seat) value;
+                    setText(seat.getSeatType() + " - ₱" + formatMoney(seat.getTicketPrice()));
+                }
+                return this;
+            }
+        });
         seatCombo.addActionListener(e -> syncSeatTicketSelection());
         
         ticketCombo = new JComboBox<>();
@@ -99,26 +123,29 @@ public class TicketPurchasePanel extends JPanel {
         ticketCombo.setEnabled(false);
         ticketCombo.setToolTipText("Ticket tier is derived from the selected seat.");
 
-        quantityField = new JTextField("1");
-        quantityField.setToolTipText("Customers may purchase between 1 and 2 seats per transaction.");
-        UAAPTheme.styleTextField(quantityField);
+        // Quantity Spinner (1-2 only)
+        quantitySpinner = new JSpinner(new SpinnerNumberModel(1, 1, 2, 1));
+        quantitySpinner.setToolTipText("Select quantity (1-2 seats per transaction)");
+        UAAPTheme.styleTextField((JTextField)((JSpinner.DefaultEditor)quantitySpinner.getEditor()).getTextField());
+        quantitySpinner.addChangeListener(e -> updateTotalPrice());
         
         unitPriceField = new JTextField(10);
         unitPriceField.setEditable(false);
         unitPriceField.setToolTipText("Read-only seat price from the linked ticket.");
         UAAPTheme.styleTextField(unitPriceField);
         
-        saleDateTimeField = new JTextField(16);
-        saleDateTimeField.setToolTipText("Optional override (YYYY-MM-DD HH:MM:SS). Leave blank for current time.");
-        UAAPTheme.styleTextField(saleDateTimeField);
+        // Total Price Label with prominent display
+        totalPriceLabel = new JLabel("₱0.00");
+        totalPriceLabel.setFont(new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 18));
+        totalPriceLabel.setForeground(UAAPTheme.PRIMARY_GREEN);
 
         addFormField(panel, 0, "Event", eventCombo);
         addFormField(panel, 1, "Match (Scheduled)", matchCombo);
         addFormField(panel, 2, "Available Seat", seatCombo);
         addFormField(panel, 3, "Ticket Tier", ticketCombo);
-        addFormField(panel, 4, "Seat Price", unitPriceField);
-        addFormField(panel, 5, "Quantity", quantityField);
-        addFormField(panel, 6, "Sale Timestamp", saleDateTimeField);
+        addFormField(panel, 4, "Unit Price", unitPriceField);
+        addFormField(panel, 5, "Quantity", quantitySpinner);
+        addFormField(panel, 6, "Total Amount", totalPriceLabel);
 
         panel.setAlignmentX(LEFT_ALIGNMENT);
         return panel;
@@ -141,9 +168,11 @@ public class TicketPurchasePanel extends JPanel {
         UAAPTheme.styleTextField(lastNameField);
         
         emailField = new JTextField(20);
+        emailField.setToolTipText("Enter valid email address");
         UAAPTheme.styleTextField(emailField);
         
         phoneField = new JTextField(15);
+        phoneField.setToolTipText("Enter contact number (e.g., 09XX-XXX-XXXX)");
         UAAPTheme.styleTextField(phoneField);
         
         organizationField = new JTextField(20);
@@ -170,18 +199,50 @@ public class TicketPurchasePanel extends JPanel {
             }
         });
         
-        paymentMethodField = new JTextField(15);
-        UAAPTheme.styleTextField(paymentMethodField);
+        // Payment Method Dropdown
+        paymentMethodCombo = new JComboBox<>(PAYMENT_METHODS);
+        paymentMethodCombo.setSelectedIndex(0);
+        UAAPTheme.styleComboBox(paymentMethodCombo);
+        paymentMethodCombo.setToolTipText("Select your preferred payment method");
 
         addFormField(panel, 0, "Existing Customer (optional)", customerCombo);
-        addFormField(panel, 1, "First Name", firstNameField);
-        addFormField(panel, 1, "Last Name", lastNameField, 1);
-        addFormField(panel, 2, "Email", emailField);
-        addFormField(panel, 2, "Phone", phoneField, 1);
+        addFormField(panel, 1, "First Name *", firstNameField);
+        addFormField(panel, 1, "Last Name *", lastNameField, 1);
+        addFormField(panel, 2, "Email *", emailField);
+        addFormField(panel, 2, "Phone *", phoneField, 1);
         addFormField(panel, 3, "Organization", organizationField);
         addFormField(panel, 3, "Preferred Team", preferredTeamCombo, 1);
-        addFormField(panel, 4, "Payment Method", paymentMethodField);
+        addFormField(panel, 4, "Payment Method *", paymentMethodCombo);
 
+        return panel;
+    }
+
+    private JPanel buildConfirmationPanel() {
+        confirmationArea = new JTextArea(20, 35);
+        confirmationArea.setEditable(false);
+        confirmationArea.setLineWrap(true);
+        confirmationArea.setWrapStyleWord(true);
+        confirmationArea.setFont(new java.awt.Font("Consolas", java.awt.Font.PLAIN, 12));
+        confirmationArea.setBackground(UAAPTheme.CARD_BACKGROUND);
+        confirmationArea.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        
+        JScrollPane scrollPane = new JScrollPane(confirmationArea);
+        scrollPane.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createTitledBorder(
+                BorderFactory.createLineBorder(UAAPTheme.CARD_BORDER, 1),
+                "Last Transaction",
+                javax.swing.border.TitledBorder.LEFT,
+                javax.swing.border.TitledBorder.TOP,
+                new java.awt.Font("Segoe UI Semibold", java.awt.Font.PLAIN, 14),
+                UAAPTheme.TEXT_PRIMARY
+            ),
+            BorderFactory.createEmptyBorder(5, 5, 5, 5)
+        ));
+        
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setOpaque(false);
+        panel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));
+        panel.add(scrollPane, BorderLayout.CENTER);
         return panel;
     }
 
@@ -204,27 +265,9 @@ public class TicketPurchasePanel extends JPanel {
         actionPanel.add(clearButton);
         actionPanel.add(purchaseButton);
 
-        confirmationArea = new JTextArea(4, 70);
-        confirmationArea.setEditable(false);
-        confirmationArea.setLineWrap(true);
-        confirmationArea.setWrapStyleWord(true);
-        confirmationArea.setFont(UAAPTheme.LABEL_FONT);
-        confirmationArea.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(UAAPTheme.CARD_BORDER, 1),
-                "Last Transaction",
-                javax.swing.border.TitledBorder.LEFT,
-                javax.swing.border.TitledBorder.TOP,
-                new java.awt.Font("Segoe UI Semibold", java.awt.Font.PLAIN, 14),
-                UAAPTheme.TEXT_PRIMARY
-            ),
-            BorderFactory.createEmptyBorder(8, 8, 8, 8)
-        ));
-
         JPanel panel = new JPanel(new BorderLayout());
         panel.setOpaque(false);
         panel.add(actionPanel, BorderLayout.NORTH);
-        panel.add(new JScrollPane(confirmationArea), BorderLayout.CENTER);
         return panel;
     }
 
@@ -238,7 +281,12 @@ public class TicketPurchasePanel extends JPanel {
         labelGbc.gridy = row;
         labelGbc.insets = new Insets(6, 6, 6, 6);
         labelGbc.anchor = GridBagConstraints.EAST;
-        panel.add(new JLabel(label), labelGbc);
+        
+        JLabel fieldLabel = new JLabel(label);
+        if (label.contains("*")) {
+            fieldLabel.setForeground(UAAPTheme.TEXT_PRIMARY);
+        }
+        panel.add(fieldLabel, labelGbc);
 
         GridBagConstraints fieldGbc = new GridBagConstraints();
         fieldGbc.gridx = colOffset * 2 + 1;
@@ -255,9 +303,10 @@ public class TicketPurchasePanel extends JPanel {
         reloadTeamOptions();
         reloadCustomers();
         refreshMatchesAndSeats();
-        applyDefaultQuantity();
+        quantitySpinner.setValue(1);
         toggleCustomerFields();
         confirmationArea.setText("");
+        updateTotalPrice();
     }
 
     private void reloadEvents() {
@@ -296,7 +345,20 @@ public class TicketPurchasePanel extends JPanel {
             }
 
             try {
-                for (Seat seat : seatDAO.getAvailableSeatsForEvent(event.getEventId(), event.getVenueAddress())) {
+                // Get all available seats and group by seat type
+                List<Seat> allSeats = seatDAO.getAvailableSeatsForEvent(event.getEventId(), event.getVenueAddress());
+                java.util.Map<String, Seat> uniqueSeatTypes = new java.util.LinkedHashMap<>();
+                
+                for (Seat seat : allSeats) {
+                    String seatType = seat.getSeatType();
+                    // Keep only the first seat of each type (we'll use it as representative)
+                    if (!uniqueSeatTypes.containsKey(seatType)) {
+                        uniqueSeatTypes.put(seatType, seat);
+                    }
+                }
+                
+                // Add unique seat types to dropdown
+                for (Seat seat : uniqueSeatTypes.values()) {
                     seatModel.addElement(seat);
                 }
             } catch (SQLException ex) {
@@ -307,7 +369,6 @@ public class TicketPurchasePanel extends JPanel {
         matchCombo.setModel(matchModel);
         matchCombo.setSelectedIndex(matchModel.getSize() > 0 ? 0 : -1);
         seatCombo.setModel(seatModel);
-        applyDefaultQuantity();
         syncSeatTicketSelection();
     }
 
@@ -356,10 +417,6 @@ public class TicketPurchasePanel extends JPanel {
         preferredTeamCombo.setSelectedIndex(0);
     }
 
-    private void applyDefaultQuantity() {
-        quantityField.setText("1");
-    }
-
     private void toggleCustomerFields() {
         Customer existing = (Customer) customerCombo.getSelectedItem();
         boolean isNew = existing == null;
@@ -369,7 +426,7 @@ public class TicketPurchasePanel extends JPanel {
         phoneField.setEnabled(isNew);
         organizationField.setEnabled(isNew);
         preferredTeamCombo.setEnabled(isNew);
-        paymentMethodField.setEnabled(true);
+        paymentMethodCombo.setEnabled(true);
 
         if (!isNew && existing != null) {
             firstNameField.setText(existing.getFirstName());
@@ -378,7 +435,7 @@ public class TicketPurchasePanel extends JPanel {
             phoneField.setText(existing.getPhoneNumber());
             organizationField.setText(existing.getOrganization());
             selectPreferredTeam(existing.getPreferredTeam());
-            paymentMethodField.setText(existing.getPaymentMethod() != null ? existing.getPaymentMethod() : "");
+            selectPaymentMethod(existing.getPaymentMethod());
         } else {
             firstNameField.setText("");
             lastNameField.setText("");
@@ -386,7 +443,7 @@ public class TicketPurchasePanel extends JPanel {
             phoneField.setText("");
             organizationField.setText("");
             preferredTeamCombo.setSelectedIndex(0);
-            paymentMethodField.setText("");
+            paymentMethodCombo.setSelectedIndex(0);
         }
     }
 
@@ -404,6 +461,20 @@ public class TicketPurchasePanel extends JPanel {
         }
         preferredTeamCombo.setSelectedIndex(0);
     }
+    
+    private void selectPaymentMethod(String method) {
+        if (method == null || method.isBlank()) {
+            paymentMethodCombo.setSelectedIndex(0);
+            return;
+        }
+        for (int i = 0; i < paymentMethodCombo.getItemCount(); i++) {
+            if (method.equalsIgnoreCase(paymentMethodCombo.getItemAt(i))) {
+                paymentMethodCombo.setSelectedIndex(i);
+                return;
+            }
+        }
+        paymentMethodCombo.setSelectedIndex(0);
+    }
 
     private String resolvePreferredTeamSelection() {
         Object selection = preferredTeamCombo.getSelectedItem();
@@ -411,6 +482,18 @@ public class TicketPurchasePanel extends JPanel {
             return ((Team) selection).getTeamName();
         }
         return null;
+    }
+    
+    private void updateTotalPrice() {
+        try {
+            BigDecimal unitPrice = new BigDecimal(unitPriceField.getText().trim().isEmpty() 
+                ? "0" : unitPriceField.getText().trim());
+            int quantity = (Integer) quantitySpinner.getValue();
+            BigDecimal total = unitPrice.multiply(BigDecimal.valueOf(quantity));
+            totalPriceLabel.setText("₱" + String.format("%,.2f", total));
+        } catch (Exception e) {
+            totalPriceLabel.setText("₱0.00");
+        }
     }
 
     private void handlePurchase() {
@@ -432,7 +515,7 @@ public class TicketPurchasePanel extends JPanel {
                 showError("Selected seat is not linked to a ticket tier.");
                 return;
             }
-            int quantity = parseQuantity(quantityField);
+            int quantity = (Integer) quantitySpinner.getValue();
 
             TicketingService.TicketPurchaseRequest request = new TicketingService.TicketPurchaseRequest();
             request.setEventId(event.getEventId());
@@ -441,17 +524,10 @@ public class TicketPurchasePanel extends JPanel {
             request.setTicketId(seatTicket.getTicketId());
             request.setQuantity(quantity);
 
-            String saleText = saleDateTimeField.getText().trim();
-            if (!saleText.isEmpty()) {
-                request.setSaleTimestamp(Timestamp.valueOf(saleText.replace('T', ' ')));
-            }
-
             Customer existingCustomer = (Customer) customerCombo.getSelectedItem();
             if (existingCustomer != null) {
                 request.setExistingCustomerId(existingCustomer.getCustomerId());
-                request.setPaymentMethod(paymentMethodField.getText().trim().isEmpty()
-                        ? existingCustomer.getPaymentMethod()
-                        : paymentMethodField.getText().trim());
+                request.setPaymentMethod((String) paymentMethodCombo.getSelectedItem());
             } else {
                 validateNewCustomerFields();
                 request.setFirstName(firstNameField.getText().trim());
@@ -462,20 +538,29 @@ public class TicketPurchasePanel extends JPanel {
                 request.setRegistrationDate(Date.valueOf(LocalDate.now()));
                 request.setPreferredTeam(resolvePreferredTeamSelection());
                 request.setCustomerStatus("Active");
-                request.setPaymentMethod(paymentMethodField.getText().trim());
+                request.setPaymentMethod((String) paymentMethodCombo.getSelectedItem());
             }
 
             TicketingService.TicketPurchaseResult result = ticketingService.purchaseTicket(request);
-            confirmationArea.setText(String.format(
-                    "Purchase successful!%nSale ID: %d%nEvent: %s%nSeat: %s%nQuantity: %d%nUnit Price: %s%nTotal Amount: %s%nTimestamp: %s",
-                    result.saleRecordId(),
-                    result.event().getEventName(),
-                    result.seat().toString(),
-                    result.quantity(),
-                    formatMoney(result.unitPrice()),
-                    formatMoney(result.totalAmount()),
-                    result.saleTimestamp()
-            ));
+            
+            // Enhanced confirmation message with proper line breaks
+            StringBuilder confirmMsg = new StringBuilder();
+            confirmMsg.append("PURCHASE SUCCESSFUL!\n\n");
+            confirmMsg.append("Transaction Details:\n");
+            confirmMsg.append("========================\n");
+            confirmMsg.append("Sale ID: #").append(result.saleRecordId()).append("\n");
+            confirmMsg.append("Event: ").append(result.event().getEventName()).append("\n");
+            confirmMsg.append("Seat: ").append(result.seat().toString()).append("\n");
+            confirmMsg.append("Quantity: ").append(result.quantity()).append(" ticket(s)\n");
+            confirmMsg.append("Unit Price: P").append(formatMoney(result.unitPrice())).append("\n");
+            confirmMsg.append("Total Paid: P").append(formatMoney(result.totalAmount())).append("\n");
+            confirmMsg.append("Payment: ").append(paymentMethodCombo.getSelectedItem()).append("\n");
+            confirmMsg.append("Time: ").append(result.saleTimestamp()).append("\n");
+            confirmMsg.append("========================\n");
+            confirmMsg.append("Thank you for your purchase!");
+            
+            confirmationArea.setText(confirmMsg.toString());
+            confirmationArea.setForeground(UAAPTheme.PRIMARY_GREEN);
 
             reloadCustomers();
             refreshMatchesAndSeats();
@@ -489,30 +574,28 @@ public class TicketPurchasePanel extends JPanel {
         String last = lastNameField.getText().trim();
         String email = emailField.getText().trim();
         String phone = phoneField.getText().trim();
+        
         if (first.isEmpty() || last.isEmpty()) {
             throw new IllegalArgumentException("First and last name are required for new customers.");
         }
         if (email.isEmpty() && phone.isEmpty()) {
             throw new IllegalArgumentException("Provide at least one contact detail (email or phone) for the new customer.");
         }
-    }
-
-    private int parseQuantity(JTextField field) {
-        String text = field.getText().trim();
-        if (text.isEmpty()) {
-            throw new IllegalArgumentException("Quantity is required.");
+        
+        // Email validation
+        if (!email.isEmpty()) {
+            Pattern emailPattern = Pattern.compile("^[A-Za-z0-9+_.-]+@(.+)$");
+            if (!emailPattern.matcher(email).matches()) {
+                throw new IllegalArgumentException("Please enter a valid email address.");
+            }
         }
-        try {
-            int value = Integer.parseInt(text);
-            if (value <= 0) {
-                throw new IllegalArgumentException("Quantity must be at least 1.");
+        
+        // Phone validation (basic Philippine format check)
+        if (!phone.isEmpty()) {
+            String cleanPhone = phone.replaceAll("[^0-9]", "");
+            if (cleanPhone.length() < 10 || cleanPhone.length() > 11) {
+                throw new IllegalArgumentException("Please enter a valid phone number (10-11 digits).");
             }
-            if (value > 2) {
-                throw new IllegalArgumentException("You may purchase at most 2 seats per transaction.");
-            }
-            return value;
-        } catch (NumberFormatException ex) {
-            throw new IllegalArgumentException("Quantity must be a whole number.");
         }
     }
 
@@ -521,10 +604,12 @@ public class TicketPurchasePanel extends JPanel {
         if (seat == null) {
             ticketCombo.setSelectedIndex(-1);
             unitPriceField.setText("");
+            updateTotalPrice();
             return;
         }
         selectTicketInCombo(seat.getTicketId());
         unitPriceField.setText(formatMoney(seat.getTicketPrice()));
+        updateTotalPrice();
     }
 
     private void selectTicketInCombo(int ticketId) {
@@ -540,7 +625,7 @@ public class TicketPurchasePanel extends JPanel {
     }
 
     private String formatMoney(BigDecimal value) {
-        return value != null ? value.stripTrailingZeros().toPlainString() : "";
+        return value != null ? String.format("%,.2f", value) : "0.00";
     }
 
     private void clearForm() {
@@ -548,11 +633,10 @@ public class TicketPurchasePanel extends JPanel {
         matchCombo.setSelectedIndex(0);
         seatCombo.setSelectedIndex(seatCombo.getItemCount() > 0 ? 0 : -1);
         ticketCombo.setSelectedIndex(ticketCombo.getItemCount() > 0 ? 0 : -1);
-        saleDateTimeField.setText("");
-        quantityField.setText("1");
+        quantitySpinner.setValue(1);
         confirmationArea.setText("");
+        confirmationArea.setForeground(UAAPTheme.TEXT_PRIMARY);
         toggleCustomerFields();
-        applyDefaultQuantity();
         syncSeatTicketSelection();
     }
 

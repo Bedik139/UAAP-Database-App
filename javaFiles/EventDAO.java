@@ -39,7 +39,7 @@ public class EventDAO {
 
     public List<Event> getAllEvents() throws SQLException {
         List<Event> events = new ArrayList<>();
-        String sql = BASE_SELECT + "ORDER BY event_id";
+        String sql = BASE_SELECT + "ORDER BY CASE WHEN event_status = 'Completed' THEN 1 ELSE 0 END ASC, event_id ASC";
 
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);

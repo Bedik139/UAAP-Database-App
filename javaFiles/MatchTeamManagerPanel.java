@@ -48,15 +48,20 @@ public class MatchTeamManagerPanel extends JPanel {
     private void initForm() {
         matchCombo = new JComboBox<>();
         matchCombo.setToolTipText("Match to link.");
+        matchCombo.setPreferredSize(new java.awt.Dimension(400, 35));
         matchCombo.addActionListener(e -> reloadTable());
+        UAAPTheme.styleComboBox(matchCombo);
 
         teamCombo = new JComboBox<>();
         teamCombo.setToolTipText("Team participating in the match.");
+        UAAPTheme.styleComboBox(teamCombo);
 
         homeCheckBox = new JCheckBox("Home Team");
+        homeCheckBox.setFont(new java.awt.Font("Segoe UI", java.awt.Font.PLAIN, 12));
 
         scoreField = new JTextField("0");
         scoreField.setToolTipText("Score recorded for this team in the match.");
+        UAAPTheme.styleTextField(scoreField);
 
         add(buildFormPanel(), BorderLayout.NORTH);
     }
@@ -86,11 +91,16 @@ public class MatchTeamManagerPanel extends JPanel {
         UAAPTheme.styleTable(table);
         table.getColumnModel().getColumn(1).setCellRenderer(new TeamLogoCellRenderer());
 
-        add(new JScrollPane(table), BorderLayout.CENTER);
+        JScrollPane scrollPane = new JScrollPane(table);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
+        UAAPTheme.elevate(scrollPane);
+        add(scrollPane, BorderLayout.CENTER);
     }
 
     private void initButtons() {
-        JPanel panel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 15));
+        panel.setBackground(UAAPTheme.LIGHT_SURFACE);
+        panel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, UAAPTheme.CARD_BORDER));
 
         addButton = new JButton("Add");
         updateButton = new JButton("Update");
@@ -98,13 +108,11 @@ public class MatchTeamManagerPanel extends JPanel {
         clearButton = new JButton("Clear Form");
         refreshButton = new JButton("Refresh");
 
-        panel.add(addButton);
-        panel.add(updateButton);
-        panel.add(deleteButton);
-        panel.add(clearButton);
-        panel.add(refreshButton);
-
-        add(panel, BorderLayout.SOUTH);
+        UAAPTheme.styleActionButton(addButton);
+        UAAPTheme.styleActionButton(updateButton);
+        UAAPTheme.styleDangerButton(deleteButton);
+        UAAPTheme.styleNeutralButton(clearButton);
+        UAAPTheme.styleInfoButton(refreshButton);
 
         addButton.addActionListener(e -> handleAdd());
         updateButton.addActionListener(e -> handleUpdate());
@@ -115,6 +123,14 @@ public class MatchTeamManagerPanel extends JPanel {
             reloadTeams();
             reloadTable();
         });
+
+        panel.add(addButton);
+        panel.add(updateButton);
+        panel.add(deleteButton);
+        panel.add(clearButton);
+        panel.add(refreshButton);
+
+        add(panel, BorderLayout.SOUTH);
     }
 
     private void reloadMatches() {
@@ -312,13 +328,30 @@ public class MatchTeamManagerPanel extends JPanel {
 
     private JPanel buildFormPanel() {
         JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBorder(BorderFactory.createTitledBorder("Match Team Participation"));
+        panel.setBackground(UAAPTheme.CARD_BACKGROUND);
+        panel.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(UAAPTheme.CARD_BORDER, 2),
+            BorderFactory.createEmptyBorder(10, 15, 10, 15)
+        ));
 
-        addFormField(panel, 0, 0, "Match", matchCombo);
-        addFormField(panel, 0, 1, "Team", teamCombo);
-        addFormField(panel, 1, 0, "Score", scoreField);
+        // Title
+        JLabel titleLabel = new JLabel("Match Team Participation");
+        titleLabel.setFont(new java.awt.Font("Segoe UI Semibold", java.awt.Font.BOLD, 14));
+        titleLabel.setForeground(UAAPTheme.TEXT_PRIMARY);
+        
+        GridBagConstraints titleGbc = new GridBagConstraints();
+        titleGbc.gridx = 0;
+        titleGbc.gridy = 0;
+        titleGbc.gridwidth = 4;
+        titleGbc.anchor = GridBagConstraints.WEST;
+        titleGbc.insets = new Insets(0, 0, 8, 0);
+        panel.add(titleLabel, titleGbc);
 
-        GridBagConstraints homeGbc = baseGbc(1, 2);
+        addFormField(panel, 1, 0, "Match", matchCombo);
+        addFormField(panel, 1, 1, "Team", teamCombo);
+        addFormField(panel, 2, 0, "Score", scoreField);
+
+        GridBagConstraints homeGbc = baseGbc(2, 2);
         homeGbc.anchor = GridBagConstraints.WEST;
         homeGbc.gridwidth = 2;
         panel.add(homeCheckBox, homeGbc);
@@ -327,9 +360,13 @@ public class MatchTeamManagerPanel extends JPanel {
     }
 
     private void addFormField(JPanel panel, int row, int col, String labelText, JComponent component) {
+        JLabel label = new JLabel(labelText + ":");
+        label.setFont(new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 12));
+        label.setForeground(UAAPTheme.TEXT_PRIMARY);
+
         GridBagConstraints labelGbc = baseGbc(row, col * 2);
         labelGbc.anchor = GridBagConstraints.EAST;
-        panel.add(new JLabel(labelText), labelGbc);
+        panel.add(label, labelGbc);
 
         GridBagConstraints fieldGbc = baseGbc(row, col * 2 + 1);
         fieldGbc.fill = GridBagConstraints.HORIZONTAL;
@@ -341,8 +378,7 @@ public class MatchTeamManagerPanel extends JPanel {
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = col;
         gbc.gridy = row;
-        gbc.insets = new Insets(6, 8, 6, 8);
-        gbc.weighty = 0;
+        gbc.insets = new Insets(4, 8, 4, 8);
         return gbc;
     }
 

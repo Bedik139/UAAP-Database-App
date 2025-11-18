@@ -1,9 +1,3 @@
-import javax.swing.*;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
-import javax.swing.table.DefaultTableModel;
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
@@ -11,6 +5,12 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.sql.SQLException;
 import java.util.List;
+import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.table.DefaultTableModel;
 
 public class TeamManagerPanel extends JPanel {
 
@@ -19,12 +19,16 @@ public class TeamManagerPanel extends JPanel {
     private JTable table;
     private DefaultTableModel tableModel;
 
-    private JTextField idField;
+    private Integer selectedTeamId;
     private JComboBox<String> nameField;
+    private JComboBox<String> sportField;
     private JTextField seasonsField;
     private JTextField winsField;
     private JTextField lossesField;
     private JTextField totalGamesField;
+
+    private JComboBox<String> filterGenderCombo;
+    private JComboBox<String> filterSportCombo;
 
     private JButton addButton;
     private JButton updateButton;
@@ -41,14 +45,13 @@ public class TeamManagerPanel extends JPanel {
     }
 
     private void initForm() {
-        idField = new JTextField();
-        idField.setEditable(false);
-        idField.setToolTipText("Auto-filled when you select a team.");
-        UAAPTheme.styleTextField(idField);
-        
         nameField = new JComboBox<>(TeamDAO.getAllowedTeamNames().toArray(new String[0]));
         nameField.setToolTipText("Select the official UAAP team name.");
         UAAPTheme.styleComboBox(nameField);
+        
+        sportField = new JComboBox<>(new String[]{"Basketball", "Volleyball"});
+        sportField.setToolTipText("Select the sport (Basketball = Men, Volleyball = Women).");
+        UAAPTheme.styleComboBox(sportField);
         
         seasonsField = new JTextField("0");
         seasonsField.setToolTipText("Total seasons the team has played.");
@@ -81,7 +84,7 @@ public class TeamManagerPanel extends JPanel {
 
     private void initTable() {
         tableModel = new DefaultTableModel(
-                new Object[]{"ID", "Name", "Seasons", "Wins", "Losses", "Total Games"}, 0
+                new Object[]{"ID", "Name", "Gender", "Sport", "Seasons", "Wins", "Losses", "Total Games"}, 0
         ) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -94,24 +97,35 @@ public class TeamManagerPanel extends JPanel {
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             @Override public void valueChanged(ListSelectionEvent e) {
-                int row = table.getSelectedRow();
-                if (row >= 0) {
-                    idField.setText(String.valueOf(tableModel.getValueAt(row, 0)));
-                    nameField.setSelectedItem(String.valueOf(tableModel.getValueAt(row, 1)));
-                    seasonsField.setText(String.valueOf(tableModel.getValueAt(row, 2)));
-                    winsField.setText(String.valueOf(tableModel.getValueAt(row, 3)));
-                    lossesField.setText(String.valueOf(tableModel.getValueAt(row, 4)));
-                    totalGamesField.setText(String.valueOf(tableModel.getValueAt(row, 5)));
+                if (!e.getValueIsAdjusting()) {
+                    int row = table.getSelectedRow();
+                    if (row >= 0) {
+                        selectedTeamId = Integer.parseInt(String.valueOf(tableModel.getValueAt(row, 0)));
+                        nameField.setSelectedItem(String.valueOf(tableModel.getValueAt(row, 1)));
+                        sportField.setSelectedItem(String.valueOf(tableModel.getValueAt(row, 3)));
+                        seasonsField.setText(String.valueOf(tableModel.getValueAt(row, 4)));
+                        winsField.setText(String.valueOf(tableModel.getValueAt(row, 5)));
+                        lossesField.setText(String.valueOf(tableModel.getValueAt(row, 6)));
+                        totalGamesField.setText(String.valueOf(tableModel.getValueAt(row, 7)));
+                    } else {
+                        selectedTeamId = null;
+                    }
                 }
             }
         });
 
-        add(new JScrollPane(table), BorderLayout.CENTER);
+        JScrollPane tableScroll = new JScrollPane(table);
+        tableScroll.setBorder(BorderFactory.createEmptyBorder());
+        UAAPTheme.elevate(tableScroll);
+        add(tableScroll, BorderLayout.CENTER);
     }
 
     private void initButtons() {
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        addButton = new JButton("Add");
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 15));
+        buttonPanel.setBackground(UAAPTheme.LIGHT_SURFACE);
+        buttonPanel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, UAAPTheme.CARD_BORDER));
+        
+        addButton = new JButton("Add Team");
         updateButton = new JButton("Update");
         deleteButton = new JButton("Delete");
         clearButton = new JButton("Clear Form");
@@ -123,17 +137,17 @@ public class TeamManagerPanel extends JPanel {
         UAAPTheme.styleNeutralButton(clearButton);
         UAAPTheme.styleInfoButton(refreshButton);
 
-        buttonPanel.add(addButton);
-        buttonPanel.add(updateButton);
-        buttonPanel.add(deleteButton);
-        buttonPanel.add(clearButton);
-        buttonPanel.add(refreshButton);
-
         addButton.addActionListener(e -> handleAdd());
         updateButton.addActionListener(e -> handleUpdate());
         deleteButton.addActionListener(e -> handleDelete());
         clearButton.addActionListener(e -> clearForm());
         refreshButton.addActionListener(e -> reloadTable());
+
+        buttonPanel.add(addButton);
+        buttonPanel.add(updateButton);
+        buttonPanel.add(deleteButton);
+        buttonPanel.add(clearButton);
+        buttonPanel.add(refreshButton);
 
         add(buttonPanel, BorderLayout.SOUTH);
     }
@@ -146,6 +160,8 @@ public class TeamManagerPanel extends JPanel {
                 tableModel.addRow(new Object[]{
                         team.getTeamId(),
                         team.getTeamName(),
+                        team.getGender(),
+                        team.getSport(),
                         team.getSeasonsPlayed(),
                         team.getStandingWins(),
                         team.getStandingLosses(),
@@ -170,7 +186,7 @@ public class TeamManagerPanel extends JPanel {
     }
 
     private void handleUpdate() {
-        if (idField.getText().trim().isEmpty()) {
+        if (selectedTeamId == null) {
             showError("Select a row first.");
             return;
         }
@@ -187,7 +203,7 @@ public class TeamManagerPanel extends JPanel {
     }
 
     private void handleDelete() {
-        if (idField.getText().trim().isEmpty()) {
+        if (selectedTeamId == null) {
             showError("Select a row first.");
             return;
         }
@@ -203,8 +219,7 @@ public class TeamManagerPanel extends JPanel {
         }
 
         try {
-            int teamId = Integer.parseInt(idField.getText().trim());
-            teamDAO.deleteTeam(teamId);
+            teamDAO.deleteTeam(selectedTeamId);
             showInfo("Team deleted.");
             reloadTable();
             clearForm();
@@ -219,19 +234,60 @@ public class TeamManagerPanel extends JPanel {
             throw new IllegalArgumentException("Team name is required.");
         }
         name = name.trim();
+        
+        String sport = (String) sportField.getSelectedItem();
+        if (sport == null || sport.trim().isEmpty()) {
+            throw new IllegalArgumentException("Sport is required.");
+        }
+
+        // Automatically determine gender based on sport
+        String gender;
+        if (sport.equalsIgnoreCase("Basketball")) {
+            gender = "Men";
+        } else if (sport.equalsIgnoreCase("Volleyball")) {
+            gender = "Women";
+            // Transform team name to use "Lady" prefix for volleyball
+            name = transformToLadyTeamName(name);
+        } else {
+            throw new IllegalArgumentException("Invalid sport selected.");
+        }
 
         int seasons = parseNonNegativeInt(seasonsField, "Seasons played");
         int wins = parseNonNegativeInt(winsField, "Wins");
         int losses = parseNonNegativeInt(lossesField, "Losses");
         int total = computeTotalGames(wins, losses);
 
-        Team team = new Team(name, seasons, wins, losses, total);
+        Team team = new Team(name, gender, sport, seasons, wins, losses, total);
         if (includeId) {
-            int id = Integer.parseInt(idField.getText().trim());
-            team.setTeamId(id);
+            team.setTeamId(selectedTeamId);
         }
         team.setTotalGamesPlayed(total);
         return team;
+    }
+
+    private String transformToLadyTeamName(String originalName) {
+        // Transform team names to "Lady" version for volleyball
+        // e.g., "De La Salle Green Archers" -> "De La Salle Lady Archers"
+        if (originalName.contains("Green Archers")) {
+            return originalName.replace("Green Archers", "Lady Archers");
+        } else if (originalName.contains("Blue Eagles")) {
+            return originalName.replace("Blue Eagles", "Lady Eagles");
+        } else if (originalName.contains("Fighting Maroons")) {
+            return originalName.replace("Fighting Maroons", "Lady Maroons");
+        } else if (originalName.contains("Growling Tigers")) {
+            return originalName.replace("Growling Tigers", "Lady Tigers");
+        } else if (originalName.contains("Tamaraws")) {
+            return originalName.replace("Tamaraws", "Lady Tamaraws");
+        } else if (originalName.contains("Red Warriors")) {
+            return originalName.replace("Red Warriors", "Lady Warriors");
+        } else if (originalName.contains("Bulldogs")) {
+            return originalName.replace("Bulldogs", "Lady Bulldogs");
+        } else if (originalName.contains("Soaring Falcons")) {
+            return originalName.replace("Soaring Falcons", "Lady Falcons");
+        }
+        
+        // If no match, return original name
+        return originalName;
     }
 
     private int parseNonNegativeInt(JTextField field, String label) {
@@ -272,7 +328,7 @@ public class TeamManagerPanel extends JPanel {
     }
 
     private void clearForm() {
-        idField.setText("");
+        selectedTeamId = null;
         if (nameField.getItemCount() > 0) {
             nameField.setSelectedIndex(0);
         }
@@ -293,22 +349,43 @@ public class TeamManagerPanel extends JPanel {
 
     private JPanel buildFormPanel() {
         JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBorder(BorderFactory.createTitledBorder("Team Details"));
+        panel.setBackground(UAAPTheme.CARD_BACKGROUND);
+        panel.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(UAAPTheme.CARD_BORDER, 2),
+            BorderFactory.createEmptyBorder(10, 15, 10, 15)
+        ));
 
-        addFormField(panel, 0, 0, "Team ID (auto)", idField);
-        addFormField(panel, 0, 1, "Team Name", nameField);
-        addFormField(panel, 1, 0, "Seasons Played", seasonsField);
-        addFormField(panel, 1, 1, "Total Games (auto)", totalGamesField);
-        addFormField(panel, 2, 0, "Wins", winsField);
-        addFormField(panel, 2, 1, "Losses", lossesField);
+        // Title
+        JLabel titleLabel = new JLabel("Team Details");
+        titleLabel.setFont(new java.awt.Font("Segoe UI Semibold", java.awt.Font.BOLD, 14));
+        titleLabel.setForeground(UAAPTheme.TEXT_PRIMARY);
+        
+        GridBagConstraints titleGbc = new GridBagConstraints();
+        titleGbc.gridx = 0;
+        titleGbc.gridy = 0;
+        titleGbc.gridwidth = 4;
+        titleGbc.anchor = GridBagConstraints.WEST;
+        titleGbc.insets = new Insets(0, 0, 8, 0);
+        titleGbc.fill = GridBagConstraints.HORIZONTAL;
+        panel.add(titleLabel, titleGbc);
+
+        addFormField(panel, 1, 0, "Team Name", nameField);
+        addFormField(panel, 1, 1, "Sport", sportField);
+        addFormField(panel, 2, 0, "Seasons Played", seasonsField);
+        addFormField(panel, 2, 1, "Wins", winsField);
+        addFormField(panel, 3, 0, "Losses", lossesField);
 
         return panel;
     }
 
     private void addFormField(JPanel panel, int row, int col, String labelText, JComponent component) {
+        JLabel jLabel = new JLabel(labelText + ":");
+        jLabel.setFont(new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 12));
+        jLabel.setForeground(UAAPTheme.TEXT_PRIMARY);
+        
         GridBagConstraints labelGbc = baseGbc(row, col * 2);
         labelGbc.anchor = GridBagConstraints.EAST;
-        panel.add(new JLabel(labelText), labelGbc);
+        panel.add(jLabel, labelGbc);
 
         GridBagConstraints fieldGbc = baseGbc(row, col * 2 + 1);
         fieldGbc.fill = GridBagConstraints.HORIZONTAL;
@@ -320,8 +397,7 @@ public class TeamManagerPanel extends JPanel {
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = col;
         gbc.gridy = row;
-        gbc.insets = new Insets(6, 8, 6, 8);
-        gbc.weighty = 0;
+        gbc.insets = new Insets(4, 8, 4, 8);
         return gbc;
     }
 }

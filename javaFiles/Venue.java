@@ -2,9 +2,9 @@ public enum Venue {
 
     MALL_OF_ASIA_ARENA("Mall of Asia Arena", 15000),
     SMART_ARANETA_COLISEUM("Smart Araneta Coliseum", 16000),
-    PHILSPORTS_ARENA("PhilSports Arena", 10000),
-    YNARES_CENTER("Ynares Center", 7000),
-    FILOIL_ECOOIL_CENTRE("Filoil EcoOil Centre", 6000);
+    PHILSPORTS_ARENA("PhilSports Arena", 8000),
+    YNARES_CENTER("Ynares Center", 10000),
+    FILOIL_ECOOIL_CENTRE("Filoil EcoOil Centre", 8000);
 
     private final String displayName;
     private final int capacity;

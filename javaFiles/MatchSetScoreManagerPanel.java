@@ -73,19 +73,8 @@ public class MatchSetScoreManagerPanel extends JPanel {
         panel.add(Box.createHorizontalStrut(16));
         panel.add(matchInfoLabel);
 
-        setSummaryArea = new JTextArea(4, 40);
-        setSummaryArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
-        setSummaryArea.setEditable(false);
-        setSummaryArea.setLineWrap(true);
-        setSummaryArea.setWrapStyleWord(true);
-        setSummaryArea.setText("Load a match to view set-by-set scoring.");
-        JScrollPane summaryScroll = new JScrollPane(setSummaryArea);
-        summaryScroll.setBorder(BorderFactory.createTitledBorder("Set Breakdown"));
-
         JPanel container = new JPanel(new BorderLayout());
         container.add(panel, BorderLayout.NORTH);
-        container.add(summaryScroll, BorderLayout.SOUTH);
-
         add(container, BorderLayout.NORTH);
     }
 

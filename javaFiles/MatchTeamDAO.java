@@ -32,7 +32,7 @@ public class MatchTeamDAO {
                 "INNER JOIN `match` m ON mt.match_id = m.match_id " +
                 "INNER JOIN event e ON m.event_id = e.event_id " +
                 "INNER JOIN team t ON mt.team_id = t.team_id " +
-                "ORDER BY mt.match_id, mt.team_id";
+                "ORDER BY CASE WHEN m.status = 'Completed' THEN 1 ELSE 0 END ASC, mt.match_id ASC, mt.team_id ASC";
 
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);

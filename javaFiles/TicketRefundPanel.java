@@ -1,27 +1,13 @@
 import java.awt.*;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
 import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
 
 public class TicketRefundPanel extends JPanel {
 
     private final TicketingService ticketingService = new TicketingService();
-    private final SeatAndTicketDAO seatAndTicketDAO = new SeatAndTicketDAO();
-    private final EventDAO eventDAO = new EventDAO();
-
-    private JComboBox<Event> eventFilterCombo;
-    private DefaultTableModel tableModel;
-    private JTable ticketTable;
-    private List<SeatAndTicket> currentRecords = new ArrayList<>();
 
     private JTextField saleIdField;
     private JTextField reasonField;
     private JTextField processedByField;
-    
-    private JLabel totalTicketsLabel;
-    private JLabel totalAmountLabel;
 
     public TicketRefundPanel() {
         setBackground(UAAPTheme.LIGHT_SURFACE);
@@ -29,11 +15,7 @@ public class TicketRefundPanel extends JPanel {
         setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
 
         add(buildHeaderPanel(), BorderLayout.NORTH);
-        add(buildTablePanel(), BorderLayout.CENTER);
-        add(buildActionPanel(), BorderLayout.SOUTH);
-        
-        reloadEvents();
-        reloadTable();
+        add(buildActionPanel(), BorderLayout.CENTER);
     }
 
     private JPanel buildHeaderPanel() {
@@ -45,107 +27,9 @@ public class TicketRefundPanel extends JPanel {
         titleLabel.setFont(UAAPTheme.TITLE_FONT);
         titleLabel.setForeground(UAAPTheme.PRIMARY_GREEN);
 
-        // Filter Panel
-        JPanel filterPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 8));
-        filterPanel.setOpaque(false);
-
-        JLabel eventLabel = new JLabel("Filter by Event:");
-        eventLabel.setFont(UAAPTheme.TABLE_FONT);
-        eventFilterCombo = new JComboBox<>();
-        eventFilterCombo.setFont(UAAPTheme.TABLE_FONT);
-        eventFilterCombo.setPreferredSize(new Dimension(250, 32));
-        eventFilterCombo.addActionListener(e -> reloadTable());
-
-        JButton refreshButton = new JButton("Refresh");
-        UAAPTheme.styleNeutralButton(refreshButton);
-        refreshButton.addActionListener(e -> {
-            reloadEvents();
-            reloadTable();
-        });
-
-        filterPanel.add(eventLabel);
-        filterPanel.add(eventFilterCombo);
-        filterPanel.add(refreshButton);
-
-        header.add(titleLabel, BorderLayout.NORTH);
-        header.add(filterPanel, BorderLayout.SOUTH);
+        header.add(titleLabel, BorderLayout.CENTER);
 
         return header;
-    }
-
-    private JPanel buildTablePanel() {
-        JPanel panel = new JPanel(new BorderLayout(0, 12));
-        panel.setOpaque(false);
-
-        // Table
-        tableModel = new DefaultTableModel(
-                new Object[]{"Sale ID", "Event", "Seat Type", "Customer", "Sale Date", "Qty", "Unit Price", "Total Price"}, 0
-        ) {
-            @Override 
-            public boolean isCellEditable(int row, int column) { 
-                return false; 
-            }
-        };
-
-        ticketTable = new JTable(tableModel);
-        ticketTable.setFont(UAAPTheme.TABLE_FONT);
-        ticketTable.setRowHeight(32);
-        ticketTable.getTableHeader().setFont(UAAPTheme.TABLE_HEADER_FONT);
-        ticketTable.getTableHeader().setBackground(UAAPTheme.TABLE_HEADER_BG);
-        ticketTable.getTableHeader().setForeground(UAAPTheme.TEXT_PRIMARY);
-        ticketTable.setSelectionBackground(UAAPTheme.SELECTION_BG);
-        ticketTable.setGridColor(UAAPTheme.DIVIDER);
-        ticketTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        
-        // Column widths
-        ticketTable.getColumnModel().getColumn(0).setPreferredWidth(70);  // Sale ID
-        ticketTable.getColumnModel().getColumn(1).setPreferredWidth(200); // Event
-        ticketTable.getColumnModel().getColumn(2).setPreferredWidth(100); // Seat
-        ticketTable.getColumnModel().getColumn(3).setPreferredWidth(150); // Customer
-        ticketTable.getColumnModel().getColumn(4).setPreferredWidth(140); // Date
-        ticketTable.getColumnModel().getColumn(5).setPreferredWidth(50);  // Qty
-        ticketTable.getColumnModel().getColumn(6).setPreferredWidth(90);  // Unit Price
-        ticketTable.getColumnModel().getColumn(7).setPreferredWidth(90);  // Total
-
-        ticketTable.getSelectionModel().addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting()) {
-                int row = ticketTable.getSelectedRow();
-                if (row >= 0 && row < currentRecords.size()) {
-                    SeatAndTicket record = currentRecords.get(row);
-                    saleIdField.setText(String.valueOf(record.getRecordId()));
-                }
-            }
-        });
-
-        JScrollPane scrollPane = new JScrollPane(ticketTable);
-        scrollPane.setBorder(BorderFactory.createLineBorder(UAAPTheme.CARD_BORDER));
-        scrollPane.getViewport().setBackground(Color.WHITE);
-
-        // Summary Panel
-        JPanel summaryPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 24, 8));
-        summaryPanel.setOpaque(false);
-        summaryPanel.setBorder(
-            BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(1, 0, 0, 0, UAAPTheme.CARD_BORDER),
-                BorderFactory.createEmptyBorder(8, 0, 0, 0)
-            )
-        );
-
-        totalTicketsLabel = new JLabel("Total Tickets: 0");
-        totalTicketsLabel.setFont(UAAPTheme.SUBTITLE_FONT);
-        totalTicketsLabel.setForeground(UAAPTheme.PRIMARY_GREEN);
-
-        totalAmountLabel = new JLabel("Total Amount: ₱0.00");
-        totalAmountLabel.setFont(UAAPTheme.SUBTITLE_FONT);
-        totalAmountLabel.setForeground(UAAPTheme.ACCENT_GOLD);
-
-        summaryPanel.add(totalTicketsLabel);
-        summaryPanel.add(totalAmountLabel);
-
-        panel.add(scrollPane, BorderLayout.CENTER);
-        panel.add(summaryPanel, BorderLayout.SOUTH);
-
-        return panel;
     }
 
     private JPanel buildActionPanel() {
@@ -168,14 +52,19 @@ public class TicketRefundPanel extends JPanel {
         saleIdField = new JTextField(10);
         saleIdField.setFont(UAAPTheme.TABLE_FONT);
         saleIdField.setPreferredSize(new Dimension(150, 32));
+        saleIdField.setToolTipText("Enter your Sale ID from purchase confirmation");
         
         reasonField = new JTextField(30);
         reasonField.setFont(UAAPTheme.TABLE_FONT);
         reasonField.setPreferredSize(new Dimension(300, 32));
+        reasonField.setToolTipText("Enter reason for refund (optional)");
         
         processedByField = new JTextField(20);
         processedByField.setFont(UAAPTheme.TABLE_FONT);
         processedByField.setPreferredSize(new Dimension(200, 32));
+        processedByField.setText("UAAP Company");
+        processedByField.setEditable(false);
+        processedByField.setToolTipText("Auto-filled for UAAP Company refund processing");
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(8, 8, 8, 8);
@@ -244,71 +133,12 @@ public class TicketRefundPanel extends JPanel {
     private void clearForm() {
         saleIdField.setText("");
         reasonField.setText("");
-        processedByField.setText("");
-        ticketTable.clearSelection();
-    }
-
-    private void reloadEvents() {
-        try {
-            DefaultComboBoxModel<Event> model = new DefaultComboBoxModel<>();
-            model.addElement(null);
-            for (Event event : eventDAO.getAllEvents()) {
-                model.addElement(event);
-            }
-            eventFilterCombo.setModel(model);
-            eventFilterCombo.setSelectedIndex(0);
-        } catch (SQLException ex) {
-            showError("Unable to load events:\n" + ex.getMessage());
-        }
-    }
-
-    private void reloadTable() {
-        tableModel.setRowCount(0);
-        currentRecords.clear();
-
-        int totalCount = 0;
-        java.math.BigDecimal totalAmount = java.math.BigDecimal.ZERO;
-
-        try {
-            List<SeatAndTicket> all = seatAndTicketDAO.getAllRecords();
-            Event filter = (Event) eventFilterCombo.getSelectedItem();
-            
-            for (SeatAndTicket record : all) {
-                if (!record.isSold()) {
-                    continue;
-                }
-                if (filter != null && record.getEventId() != filter.getEventId()) {
-                    continue;
-                }
-                
-                currentRecords.add(record);
-                totalCount++;
-                totalAmount = totalAmount.add(record.getTotalPrice());
-                
-                tableModel.addRow(new Object[]{
-                        record.getRecordId(),
-                        record.getEventName(),
-                        record.getSeatLabel(),
-                        record.getCustomerName(),
-                        record.getSaleDatetime(),
-                        record.getQuantity(),
-                        formatMoney(record.getUnitPrice()),
-                        formatMoney(record.getTotalPrice())
-                });
-            }
-
-            // Update summary
-            totalTicketsLabel.setText("Total Tickets: " + totalCount);
-            totalAmountLabel.setText("Total Amount: ₱" + formatMoney(totalAmount));
-
-        } catch (SQLException ex) {
-            showError("Unable to load ticket sales:\n" + ex.getMessage());
-        }
+        processedByField.setText("UAAP Company");
     }
 
     private void handleRefund() {
         if (saleIdField.getText().trim().isEmpty()) {
-            showError("Please select a sale from the table or enter the sale ID.");
+            showError("Please enter your Sale ID.");
             return;
         }
 
@@ -316,7 +146,7 @@ public class TicketRefundPanel extends JPanel {
             int saleId = Integer.parseInt(saleIdField.getText().trim());
             String reason = reasonField.getText().trim();
             String processedBy = processedByField.getText().trim().isEmpty()
-                    ? "Customer Portal"
+                    ? "UAAP Company"
                     : processedByField.getText().trim();
 
             // Confirmation dialog
@@ -361,7 +191,6 @@ public class TicketRefundPanel extends JPanel {
             );
 
             clearForm();
-            reloadTable();
             
         } catch (NumberFormatException ex) {
             showError("Invalid Sale ID format. Please enter a valid number.");
@@ -377,10 +206,5 @@ public class TicketRefundPanel extends JPanel {
                 "Error",
                 JOptionPane.ERROR_MESSAGE
         );
-    }
-
-    private String formatMoney(java.math.BigDecimal value) {
-        if (value == null) return "0.00";
-        return String.format("%,.2f", value);
     }
 }

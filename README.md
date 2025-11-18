@@ -16,12 +16,10 @@ MySQL Connector/J 9.5.0 (included in lib/)
 
 DATABASE SETUP
 
-1. Create Database
-CREATE DATABASE uaap_db;
-USE uaap_db;
-
-2. Run Schema
-Execute UAAPDB.sql to create all tables with proper constraints:
+1. Run Schema
+Execute UAAPDB.sql which will:
+- Drop and create database UAAPDBSQL
+- Create all tables with proper constraints:
 
 Core Tables:
 event - Event details (sport, venue, dates, capacity, status)
@@ -45,22 +43,31 @@ refund_audit - Refund logging and audit trail
 Operations Tables:
 event_personnel - Staff assignments (ushers, referees, entertainers, etc.)
 
-3. Update Database Connection
+2. Update Database Connection
 Edit Database.java credentials:
-private static final String URL = "jdbc:mysql://localhost:3306/uaap_db";
+private static final String URL = "jdbc:mysql://localhost:3306/UAAPDBSQL";
 private static final String USER = "your_username";
 private static final String PASSWORD = "your_password";
 
+Note: The SQL file creates a database named UAAPDBSQL.
+
 COMPILE AND RUN
 
+Use the provided batch file (Windows):
+compileAndRun.bat
+
+Or manually compile from project root:
+
 Compile (Windows)
-javac -cp ".;lib/mysql-connector-j-9.5.0.jar" *.java
+cd javaFiles
+javac -cp ".;../lib/mysql-connector-j-9.5.0.jar" -d ../classes *.java
 
 Compile (macOS/Linux)
-javac -cp ".:lib/mysql-connector-j-9.5.0.jar" *.java
+cd javaFiles
+javac -cp ".:../lib/mysql-connector-j-9.5.0.jar" -d ../classes *.java
 
-Run
-java -cp ".;lib/mysql-connector-j-9.5.0.jar" UAAPApp
+Run (from project root)
+java -cp "classes;lib/mysql-connector-j-9.5.0.jar" UAAPApp
 
 APPLICATION STRUCTURE
 
@@ -151,11 +158,21 @@ Creates/retrieves customer record
 Records sale with audit trail
 Marks seat as sold (atomic operation)
 
+VENUE CAPACITIES
+
+Mall of Asia Arena: 15,000
+Smart Araneta Coliseum: 16,000
+PhilSports Arena: 8,000
+Ynares Center: 10,000
+Filoil EcoOil Centre: 8,000
+
 DEFAULT TICKET TIERS
 
-Ticket 1 - General Admission / Upper Box: P500
-Ticket 2 - Lower Box: P750  
-Ticket 3 - Courtside: P1200
+Ticket 1 - General Admission: P300
+Ticket 2 - Upper Box: P500
+Ticket 3 - Lower Box: P750
+Ticket 4 - Courtside: P1,200
+Ticket 5 - Patron: P400
 
 Prices are inherited from seat assignments and can be customized per venue/event.
 
@@ -166,11 +183,11 @@ Verify lib/mysql-connector-j-9.5.0.jar is in classpath
 Connection Failed
 Update credentials in Database.java
 Ensure MySQL server is running
-Verify uaap_db database exists
+Verify UAAPDBSQL database exists
 
 Compilation Errors
 Use correct classpath separator (semicolon Windows, colon Unix)
-Ensure all .java files are in project root
+Navigate to javaFiles directory before compiling
 Check JDK version (11+)
 
 UAAP TEAMS

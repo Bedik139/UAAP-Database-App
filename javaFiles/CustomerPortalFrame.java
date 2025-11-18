@@ -12,7 +12,7 @@ public class CustomerPortalFrame extends JFrame {
 
     public CustomerPortalFrame() {
         setTitle("UAAP Customer Portal");
-        setSize(1024, 660);
+        setSize(1400, 800);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null);
 

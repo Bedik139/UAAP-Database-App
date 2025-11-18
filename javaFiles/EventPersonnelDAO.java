@@ -42,7 +42,7 @@ public class EventPersonnelDAO {
                 "INNER JOIN event e ON ep.event_id = e.event_id " +
                 "LEFT JOIN `match` m ON ep.match_id = m.match_id " +
                 "LEFT JOIN event ev ON m.event_id = ev.event_id " +
-                "ORDER BY ep.personnel_id";
+                "ORDER BY CASE WHEN e.event_status = 'Completed' THEN 1 ELSE 0 END ASC, ep.personnel_id ASC";
 
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
