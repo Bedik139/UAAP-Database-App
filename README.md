@@ -11,7 +11,8 @@ A comprehensive Java-based database application for managing UAAP (University At
 - YU, Chrisander Jervin C.
 
 ## Key Features
-
+### Customer Chat Bot
+- **For Customer** - a chat bot that address the customer's needs and guides the customer 
 ### Manager Portal
 - **Event & Match Management** - Schedule events, manage matches, and track team performance
 - **Live Scoring** - Quarter-by-quarter (basketball) and set-by-set (volleyball) scoring
@@ -57,3 +58,4 @@ Basketball, Volleyball, and other UAAP sports events
 
 ## Participating Teams
 Ateneo, De La Salle, FEU, UP, UST, NU, UE, Adamson
+
