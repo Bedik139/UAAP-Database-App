@@ -1,9 +1,3 @@
-# UAAP Event Management System
-
-[![Java](https://img.shields.io/badge/Java-11+-orange.svg)](https://www.java.com/)
-[![MySQL](https://img.shields.io/badge/MySQL-8.0+-blue.svg)](https://www.mysql.com/)
-[![License](https://img.shields.io/badge/License-Academic-green.svg)]()
-
 ## 📋 Table of Contents
 - [Overview](#overview)
 - [Team Members](#team-members)
@@ -304,7 +298,7 @@ UAAP-Database-App-main/
 
 ---
 
-## 🗄️ Database Schema
+## Database Schema
 
 ### Core Tables
 
@@ -385,4 +379,5 @@ This project is developed for academic purposes as part of the CCINFOM course at
 - **Java Swing** for rich desktop UI capabilities
 
 ---
+
 
