@@ -9,7 +9,7 @@
 - [Project Structure](#project-structure)
 - [Database Schema](#database-schema)
 - [User Portals](#user-portals)
-- [Troubleshooting](#troubleshooting)
+- [Troubleshooting](#btroubleshooting)
 - [Contributing](#contributing)
 
 ---
