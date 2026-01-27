@@ -5,7 +5,7 @@
 - [Technical Stack](#technical-stack)
 - [Prerequisites](#prerequisites)
 - [Installation & Setup](#installation--setup)
-- [Running the Application](#running-the-application)
+- [Running hthe Application](#running-the-application)
 - [Project Structure](#project-structure)
 - [Database Schema](#database-schema)
 - [User Portals](#user-portals)
