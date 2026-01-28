@@ -5,7 +5,7 @@
 - [Technical Stack](#technical-stack)
 - [Prerequisites](#prerequisites)
 - [Installation & Setup](#installation--setup)
-- [Running hthe Application](#running-the-application)
+- [Running the Application](#running-the-application)
 - [Project Structure](#project-structure)
 - [Database Schema](#database-schema)
 - [User Portals](#user-portals)
@@ -379,5 +379,6 @@ This project is developed for academic purposes as part of the CCINFOM course at
 - **Java Swing** for rich desktop UI capabilities
 
 ---
+
 
 
